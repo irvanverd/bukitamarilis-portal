@@ -1,5 +1,5 @@
 export async function getFinanceData() {
-    const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+    const SHEET_ID = process.env.SHEET_CHARTFIN_ID;
   
     const url =
       `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
