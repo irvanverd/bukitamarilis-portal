@@ -2,7 +2,7 @@ import Link from "next/link";
 
 async function getKasSummary() {
   const res = await fetch(
-    "http://localhost:3001/api/finance",
+    "/api/finance",
     {
       cache: "no-store",
     }
