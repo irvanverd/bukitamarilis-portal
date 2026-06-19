@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 async function getKasSummary() {
   // 1. Dapatkan host/domain secara dinamis untuk mengatasi ERR_INVALID_URL di Vercel
   const headersList = await headers();
-  const host = headersList.get("host") || "localhost:3000";
+  const host = headersList.get("host") || "localhost:3001";
   const protocol = host.includes("localhost") ? "http" : "https";
   
   try {

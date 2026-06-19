@@ -1,4 +1,3 @@
-'use client'; // <-- WAJIB DI BARIS PERTAMA
 import { NextResponse } from "next/server";
 import { getFinanceData } from "@/lib/googleSheet";
 
