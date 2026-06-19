@@ -1,3 +1,4 @@
+'use client'; // <-- WAJIB DI BARIS PERTAMA
 import Link from "next/link";
 
 async function getKasSummary() {
