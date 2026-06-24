@@ -1,46 +1,32 @@
-export default function TentangPage() {
-    return (
-      <div className="max-w-5xl mx-auto p-6">
-  
-        <h1 className="text-3xl font-bold mb-6">
-          Tentang RT Bukit Amarilis
-        </h1>
-  
-        <div className="bg-white rounded-lg shadow p-6">
-  
-          <h2 className="font-bold text-xl mb-3">
-            Profil
-          </h2>
-  
-          <p>
-            RT Bukit Amarilis merupakan lingkungan
-            yang menjunjung tinggi kebersamaan,
-            keamanan, dan transparansi dalam
-            pengelolaan kegiatan warga.
-          </p>
-  
-          <h2 className="font-bold text-xl mt-8 mb-3">
-            Visi
-          </h2>
-  
-          <p>
-            Mewujudkan lingkungan yang aman,
-            nyaman, dan harmonis.
-          </p>
-  
-          <h2 className="font-bold text-xl mt-8 mb-3">
-            Misi
-          </h2>
-  
-          <ul className="list-disc ml-5 space-y-2">
-            <li>Transparansi keuangan RT</li>
-            <li>Digitalisasi informasi warga</li>
-            <li>Peningkatan gotong royong</li>
-            <li>Menjaga kebersihan lingkungan</li>
-          </ul>
-  
+export const dynamic = 'force-dynamic';
+
+interface TentangData {
+  visi: string;
+  misi: string;
+}
+
+export default async function HalamanTentang() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SHEETDB_URL}?sheet=tentang`, { cache: 'no-store' });
+  const result = res.ok ? await res.json() : [];
+  const data: TentangData = result[0] || { visi: 'Belum diisi', misi: 'Belum diisi' };
+
+  return (
+    <main className="min-h-screen bg-slate-50 py-12 px-6 font-sans text-slate-800">
+      <div className="max-w-3xl mx-auto bg-white p-8 md:p-12 rounded-3xl border shadow-sm space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold text-slate-900">Visi & Misi Organisasi</h1>
         </div>
-  
+        
+        <div className="border-t pt-6">
+          <h2 className="text-xl font-bold text-blue-600 mb-2">Visi</h2>
+          <p className="text-lg italic text-slate-700 leading-relaxed">"{data.visi}"</p>
+        </div>
+
+        <div className="border-t pt-6">
+          <h2 className="text-xl font-bold text-blue-600 mb-2">Misi</h2>
+          <p className="text-base leading-relaxed whitespace-pre-line">{data.misi}</p>
+        </div>
       </div>
-    );
-  }
+    </main>
+  );
+}
