@@ -150,7 +150,34 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* TOMBOL LAYANAN PELANGGAN WHATSAPP */}
+<a
+  href="https://wa.me/6285691747527?text=Halo%20Admin%20Portal%20Warga%20RT%2007%2C%20saya%20ingin%20bertanya%20mengenai..."
+  target="_blank"
+  rel="noopener noreferrer"
+  className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-0.5 transition-all duration-300 group font-sans text-sm font-semibold"
+>
+  {/* Logo SVG WhatsApp Resmi */}
+  <svg
+    className="w-5 h-5 fill-current"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.457L0 24zm6.59-4.846c1.66.986 3.292 1.503 5.361 1.504 5.573 0 10.11-4.531 10.113-10.104.002-2.699-1.044-5.234-2.949-7.141-1.905-1.907-4.438-2.956-7.139-2.957-5.576 0-10.114 4.532-10.117 10.106-.001 2.105.547 4.159 1.593 5.922l-.993 3.626 3.733-.979zm12.015-7.447c-.329-.164-1.943-.959-2.241-1.069-.299-.11-.517-.164-.734.164-.218.329-.844 1.069-1.035 1.288-.19.219-.381.247-.71.082-.329-.164-1.389-.512-2.646-1.633-.978-.872-1.637-1.95-1.829-2.28-.192-.329-.02-.507.145-.671.148-.147.329-.384.494-.575.164-.192.219-.329.329-.548.11-.219.055-.411-.027-.575-.082-.164-.734-1.768-1.006-2.425-.265-.64-.53-.553-.734-.564-.191-.01-.411-.011-.63-.011-.218 0-.573.082-.872.411-.299.329-1.143 1.116-1.143 2.72 0 1.604 1.171 3.154 1.334 3.374.164.22 2.304 3.516 5.581 4.933.78.337 1.389.538 1.864.689.784.249 1.497.214 2.061.13.629-.094 1.943-.795 2.216-1.562.272-.767.272-1.424.191-1.562-.081-.138-.299-.219-.629-.383z" />
+  </svg>
+
+  {/* Teks Label (Akan otomatis sembunyi di layar HP yang sangat kecil jika mau, tapi ini dibuat pas) */}
+  <span>Chat Hallo Amarilis</span>
+
+  {/* Notifikasi Titik Merah Berkedip untuk menarik perhatian (Efek Pulse) */}
+  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+  </span>
+</a>
     </div>
+
   );
 }
 

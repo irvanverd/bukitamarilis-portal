@@ -19,7 +19,6 @@ async function getPengurusData(): Promise<Pengurus[]> {
   }
 
   try {
-    // Ambil data khusus dari tab sheet 'pengurus'
     const res = await fetch(`${SHEETDB_URL}?sheet=pengurus`, {
       cache: 'no-store' // bypass cache agar real-time
     });
@@ -36,8 +35,20 @@ export default async function HalamanPengurus() {
   const pengurusList = await getPengurusData();
 
   return (
-    <main className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-5xl mx-auto">
+    <main className="min-h-screen bg-slate-50 font-sans pb-12">
+      
+      {/* 1. SEKSI FULL-WIDTH IMAGE BANNER */}
+      <div className="w-full h-48 sm:h-64 md:h-160 relative overflow-hidden shadow-sm">
+        <img 
+          src="https://i.ibb.co.com/Xkyc0p7w/bagan-pengurus2.png" 
+          alt="Banner Pengurus RT 07" 
+          className="w-full h-full object-cover"
+        />
+        {/* Overlay gelap tipis agar gambar terlihat lebih sinematik dan elegan */}
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         
         {/* Judul Halaman */}
         <div className="text-center mb-12">
@@ -59,7 +70,7 @@ export default async function HalamanPengurus() {
                 key={item.id} 
                 className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center hover:shadow-md transition duration-300"
               >
-                {/* Lingkaran Foto */}
+                {/* Lingkaran Foto Anggota */}
                 <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-blue-500 shadow-inner mb-4">
                   <img 
                     src={item.foto || 'https://via.placeholder.com/150'} 
