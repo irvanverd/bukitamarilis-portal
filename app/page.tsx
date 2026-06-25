@@ -134,9 +134,9 @@ export default async function HomePage() {
           <h2 className="text-xl font-bold mb-4">Informasi Terbaru</h2>
 
           <div className="space-y-4">
-            <NewsItem title="Kerja Bakti Bulanan" date="15 Juni 2026" />
-            <NewsItem title="Pengecatan Pos Keamanan" date="10 Juni 2026" />
-            <NewsItem title="Rapat Warga Bulanan" date="05 Juni 2026" />
+            <NewsItem title="Kerja Bakti" date="15 Juni 2026" />
+            <NewsItem title="Pemadaman Listrik dari PLN" date="20 Juni 2026" />
+            <NewsItem title="Rapat Warga" date="14 Juni 2026" />
           </div>
         </div>
 
@@ -144,9 +144,9 @@ export default async function HomePage() {
           <h2 className="text-xl font-bold mb-4">Agenda Mendatang</h2>
 
           <div className="space-y-4">
-            <AgendaItem date="20 Juni" title="Senam Pagi Bersama" />
-            <AgendaItem date="25 Juni" title="Rapat Pengurus" />
-            <AgendaItem date="30 Juni" title="Kerja Bakti Lingkungan" />
+            <AgendaItem date="19 Juni" title="Posyandu" />
+            <AgendaItem date="27 Juni" title="Gowes Pagi Bersama Amfibi rute FM - Sutet " />
+            <AgendaItem date="28 Juni" title="Kerja Bakti Lingkungan pembuatan bank sampah" />
           </div>
         </div>
       </section>
