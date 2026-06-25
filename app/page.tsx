@@ -36,7 +36,7 @@ async function getKasSummary() {
     return {
       pemasukan: Number(kasBulanIni?.pemasukan) || 0,
       pengeluaran: Number(kasBulanIni?.pengeluaran) || 0,
-      saldo: (Number(kasBulanIni?.pemasukan) || 0) - (Number(kasBulanIni?.pengeluaran) || 0),
+      saldo: Number(kasBulanIni?.saldo) || 0,
     };
   } catch (error) {
     console.error("Error pada getKasSummary:", error);

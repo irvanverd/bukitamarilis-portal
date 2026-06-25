@@ -21,5 +21,7 @@ export async function getFinanceData() {
       bulan: row.c[1]?.v ?? "",
       pemasukan: Number(row.c[2]?.v ?? 0),
       pengeluaran: Number(row.c[3]?.v ?? 0),
+      saldo: Number(row.c[4]?.v ?? 0),
+
     }));
   }

@@ -63,6 +63,13 @@ export default function DashboardChart({ data }: Props) {
               stroke="#ef4444"
               strokeWidth={3}
             />
+
+          <Line
+              type={lineType}
+              dataKey="saldo"
+              stroke="#22c55e"
+              strokeWidth={3}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
