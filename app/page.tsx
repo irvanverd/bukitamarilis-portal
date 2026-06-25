@@ -88,10 +88,10 @@ export default async function HomePage() {
 
       {/* STATISTIK */}
       <section className="grid gap-4 md:grid-cols-4">
-        <Card title="Jumlah KK" value="124" color="bg-blue-50" emoji="👥"  />
-        <Card title="Jumlah Warga" value="300" color="bg-green-50" emoji="👥"  />
-        <Card title="Kegiatan Bulan Ini" value="8" color="bg-yellow-50" emoji="👥"  />
-        <Card title="Pengumuman Aktif" value="3" color="bg-red-50" emoji="👥"  />
+        <Card title="Jumlah KK" value="124" color="bg-blue-50" emoji="👫"  />
+        <Card title="Jumlah Warga" value="300" color="bg-green-50" emoji="👤"  />
+        <Card title="Kegiatan Bulan Ini" value="8" color="bg-yellow-50" emoji="📆"  />
+        <Card title="Pengumuman Aktif" value="3" color="bg-red-50" emoji="📢"  />
       </section>
 
       {/* KAS RT */}
@@ -123,7 +123,7 @@ export default async function HomePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MenuCard title="Transparansi" desc="Laporan keuangan RT" href="/transparansi" emoji="📊" />
           <MenuCard title="Kegiatan" desc="Agenda dan dokumentasi" href="/kegiatan" emoji="🎉" />
-          <MenuCard title="Pengurus" desc="Susunan pengurus RT" href="/pengurus" emoji="👥" />
+          <MenuCard title="Pengurus" desc="Susunan pengurus RT" href="/pengurus" emoji="👨🏻‍🎓" />
           <MenuCard title="Tentang" desc="Profil RT Bukit Amarilis" href="/tentang" emoji="🏡" />
         </div>
       </section>
