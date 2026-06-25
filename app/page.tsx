@@ -48,19 +48,27 @@ export default async function HomePage() {
   const kas = await getKasSummary();
 
   return (
-    <div className="space-y-8">
-      {/* HERO */}
-      <section className="rounded-3xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-8 md:p-12 text-white shadow-lg">
-        <div className="max-w-4xl">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">
-            Portal Warga RT 07/IV Bukit Amarilis
-          </h1>
+    <div className="space-y-6">
+    {/* HERO DENGAN BACKGROUND IMAGE */}
+    <section 
+      className="relative rounded-2xl bg-cover bg-center p-5 md:p-8 text-white shadow-md overflow-hidden"
+      style={{ backgroundImage: `url('https://i.ibb.co.com/F4x5fHKJ/Logo-Banner-Amarilis.png')` }}
+     
+    >
+      {/* Lapisan Gelap (Overlay) agar teks tetap mudah dibaca */}
+      <div className="absolute inset-0 bg-black/40 z-0" />
 
-          <p className="text-lg md:text-xl text-green-50">
-            Transparansi, Informasi, dan Komunikasi Warga dalam satu portal.
-          </p>
+      {/* Konten Utama (Diberi z-10 agar berada di atas overlay) */}
+      <div className="relative max-w-3xl z-10">
+        <h1 className="text-xl md:text-3xl font-bold mb-2 tracking-tight">
+          Portal Warga RT 07/IV Bukit Amarilis
+        </h1>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+        <p className="text-sm md:text-base text-slate-100">
+          Transparansi, Informasi, dan Komunikasi Warga dalam satu portal.
+        </p>
+
+        <div className="mt-5 flex flex-wrap gap-2.5">
             <Link
               href="/transparansi"
               className="px-5 py-3 rounded-xl bg-white text-green-700 font-semibold hover:bg-green-50 transition"
@@ -80,10 +88,10 @@ export default async function HomePage() {
 
       {/* STATISTIK */}
       <section className="grid gap-4 md:grid-cols-4">
-        <Card title="Jumlah KK" value="124" color="bg-blue-50" />
-        <Card title="Jumlah Warga" value="300" color="bg-green-50" />
-        <Card title="Kegiatan Bulan Ini" value="8" color="bg-yellow-50" />
-        <Card title="Pengumuman Aktif" value="3" color="bg-red-50" />
+        <Card title="Jumlah KK" value="124" color="bg-blue-50" emoji="👥"  />
+        <Card title="Jumlah Warga" value="300" color="bg-green-50" emoji="👥"  />
+        <Card title="Kegiatan Bulan Ini" value="8" color="bg-yellow-50" emoji="👥"  />
+        <Card title="Pengumuman Aktif" value="3" color="bg-red-50" emoji="👥"  />
       </section>
 
       {/* KAS RT */}
@@ -148,11 +156,12 @@ export default async function HomePage() {
 
 // ==================== SUB-COMPONENTS ====================
 
-function Card({ title, value, color }: { title: string; value: string; color: string }) {
+function Card({ title, value, color,emoji }: { title: string; value: string; color: string; emoji: string }) {
   return (
     <div className={`${color} rounded-2xl p-5`}>
       <p className="text-gray-600">{title}</p>
       <h3 className="text-3xl font-bold mt-2">{value}</h3>
+      <div className="text-4xl mb-3">{emoji}</div>
     </div>
   );
 }
