@@ -61,7 +61,7 @@ export default async function HomePage() {
       {/* Konten Utama (Diberi z-10 agar berada di atas overlay) */}
       <div className="relative max-w-3xl z-10">
         <h1 className="text-xl md:text-3xl font-bold mb-2 tracking-tight">
-          Portal Warga RT 07/IV Bukit Amarilis
+          Portal Warga RT 07/XIV Bukit Amarilis
         </h1>
 
         <p className="text-sm md:text-base text-slate-100">
@@ -100,7 +100,7 @@ export default async function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold">Ringkasan Kas RT</h2>
-              <p className="text-gray-500">Data berasal dari Google Sheet</p>
+              <p className="text-gray-500">Data berasal dari Google Sheet : lastupdate "Timestamp"</p>
             </div>
 
             <Link href="/transparansi" className="text-green-600 font-medium">
@@ -124,7 +124,7 @@ export default async function HomePage() {
           <MenuCard title="Transparansi" desc="Laporan keuangan RT" href="/transparansi" emoji="📊" />
           <MenuCard title="Kegiatan" desc="Agenda dan dokumentasi" href="/kegiatan" emoji="🎉" />
           <MenuCard title="Pengurus" desc="Susunan pengurus RT" href="/pengurus" emoji="👨🏻‍🎓" />
-          <MenuCard title="Tentang" desc="Profil RT Bukit Amarilis" href="/tentang" emoji="🏡" />
+          <MenuCard title="Tentang" desc="Profil,VISI & MISI RT 07 / XIV Bukit Amarilis" href="/tentang" emoji="🏡" />
         </div>
       </section>
 
@@ -134,9 +134,9 @@ export default async function HomePage() {
           <h2 className="text-xl font-bold mb-4">Informasi Terbaru</h2>
 
           <div className="space-y-4">
-            <NewsItem title="Kerja Bakti Bulanan" date="15 Juni 2026" />
-            <NewsItem title="Pengecatan Pos Keamanan" date="10 Juni 2026" />
-            <NewsItem title="Rapat Warga Bulanan" date="05 Juni 2026" />
+            <NewsItem title="Kerja Bakti Menyambut HUT RI" date="27 Juni 2026" />
+            <NewsItem title="Perbaikan dan Peremajaan Sarpras Lapangan Multifungsi" date="27 Juni 2026" />
+            <NewsItem title="Rapat Warga" date="14 Juni 2026" />
           </div>
         </div>
 
@@ -144,9 +144,8 @@ export default async function HomePage() {
           <h2 className="text-xl font-bold mb-4">Agenda Mendatang</h2>
 
           <div className="space-y-4">
-            <AgendaItem date="20 Juni" title="Senam Pagi Bersama" />
-            <AgendaItem date="25 Juni" title="Rapat Pengurus" />
-            <AgendaItem date="30 Juni" title="Kerja Bakti Lingkungan" />
+            <AgendaItem date="27 Juni" title="Kerja Bakti Lokasi : Lapangan Multifungsi" />
+            <AgendaItem date="6 Juni" title="Rapat Pengurus" />
           </div>
         </div>
       </section>
