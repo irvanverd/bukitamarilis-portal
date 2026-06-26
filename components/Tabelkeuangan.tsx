@@ -15,8 +15,6 @@ interface KeuanganDetail {
 interface IplSummary {
   tahun: string;
   bulan: string;
-  cash: string | number;
-  transfer: string | number;
   total: string | number;
 }
 
@@ -196,8 +194,6 @@ export default function TransparansiTables() {
                   <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-center">
                     <th className="p-3 text-left sticky left-0 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10">Tahun</th>
                     <th className="p-3 text-left sticky left-[4.5rem] bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10">Bulan</th>
-                    <th className="p-3 bg-emerald-50 text-emerald-800">Cash</th>
-                    <th className="p-3 bg-blue-50 text-blue-800">Transfer</th>
                     <th className="p-3 bg-blue-50 text-blue-800">Total</th>
                   </tr>
                 </thead>
@@ -209,8 +205,6 @@ export default function TransparansiTables() {
                       <tr key={idx} className="hover:bg-slate-50">
                         <td className="p-3 text-left font-bold text-slate-800 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{item.tahun}</td>
                         <td className="p-3 text-left font-semibold text-blue-600 sticky left-[4.5rem] bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{item.bulan}</td>
-                        <td className="p-3 bg-emerald-50/40 text-emerald-700 font-bold text-right">{formatRupiah(item.cash)}</td>
-                        <td className="p-3 bg-blue-50/40 text-blue-700 font-bold text-right">{formatRupiah(item.transfer)}</td>
                         <td className="p-3 bg-blue-50/40 text-blue-700 font-bold text-right">{formatRupiah(item.total)}</td>
                       </tr>
                     ))
