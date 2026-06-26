@@ -188,12 +188,12 @@ export default function TransparansiTables() {
 
           {/* TAB 2 */}
           {activeTab === 'summary' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse table-auto min-w-[1200px] text-center text-xs">
-                <thead>
-                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-center">
-                    <th className="p-3 text-left sticky left-0 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10">Tahun</th>
-                    <th className="p-3 text-left sticky left-[4.5rem] bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10">Bulan</th>
+             <div className="overflow-x-auto">
+             <table className="w-full text-left border-collapse min-w-[600px]">
+               <thead>
+                 <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-sm font-semibold">
+                   <th className="p-4">Tahin</th>
+                   <th className="p-4">Bulan</th>
                     <th className="p-3 bg-blue-50 text-blue-800">Total</th>
                   </tr>
                 </thead>
