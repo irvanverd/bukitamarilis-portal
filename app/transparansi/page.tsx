@@ -1,4 +1,5 @@
 import DashboardChart from "@/components/DashboardChart";
+import TransparansiTables from "@/components/Tabelkeuangan"; // Impor komponen tabel baru
 import { headers } from "next/headers";
 
 async function getData() {
@@ -24,25 +25,34 @@ async function getData() {
 }
 
 export default async function TransparansiPage() {
-  // Menggunakan try-catch sederhana agar jika Google Sheet bermasalah, web tidak langsung crash
   try {
     const data = await getData();
 
     return (
-      <main className="p-6">
+      <main className="p-6 max-w-7xl mx-auto font-sans">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">
           Transparansi Keuangan
         </h1>
-        <DashboardChart data={data} />
+        
+        {/* 1. BAGIAN GRAFIK LAMA */}
+        <div className="bg-white p-4 rounded-2xl border shadow-sm">
+          <DashboardChart data={data} />
+        </div>
+
+        {/* 2. BAGIAN 2 TAB TABEL BARU */}
+        <TransparansiTables />
       </main>
     );
   } catch (error) {
     return (
-      <main className="p-6 text-center text-red-500">
+      <main className="p-6 text-center text-red-500 max-w-7xl mx-auto font-sans">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">
           Transparansi Keuangan
         </h1>
-        <p>Gagal memuat data grafik. Silakan coba beberapa saat lagi.</p>
+        <div className="p-6 bg-red-50 border border-red-200 rounded-2xl">
+          <p className="font-semibold">Gagal memuat data grafik & tabel.</p>
+          <p className="text-sm text-red-400 mt-1">Silakan periksa koneksi Google Sheets Anda atau coba beberapa saat lagi.</p>
+        </div>
       </main>
     );
   }
