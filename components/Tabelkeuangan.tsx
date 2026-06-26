@@ -192,9 +192,9 @@ export default function TransparansiTables() {
              <table className="w-full text-left border-collapse min-w-[600px]">
                <thead>
                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-sm font-semibold">
-                   <th className="p-4">Tahin</th>
+                   <th className="p-4">Tahun</th>
                    <th className="p-4">Bulan</th>
-                    <th className="p-3 bg-blue-50 text-blue-800">Total</th>
+                    <th className="p-4">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-600">
@@ -203,9 +203,9 @@ export default function TransparansiTables() {
                   ) : (
                     dataIpl.map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50">
-                        <td className="p-3 text-left font-bold text-slate-800 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{item.tahun}</td>
-                        <td className="p-3 text-left font-semibold text-blue-600 sticky left-[4.5rem] bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{item.bulan}</td>
-                        <td className="p-3 bg-blue-50/40 text-blue-700 font-bold text-right">{formatRupiah(item.total)}</td>
+                        <td className="p-3 border-r border-slate-50">{item.tahun}</td>
+                        <td className="p-3 border-r border-slate-50">{item.bulan}</td>
+                        <td className="p-3 border-r border-slate-50 font-bold text-right">{formatRupiah(item.total)}</td>
                       </tr>
                     ))
                   )}
