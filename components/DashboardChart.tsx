@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 
+
 interface Props {
   data: any[];
 }
@@ -42,13 +43,26 @@ export default function DashboardChart({ data }: Props) {
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
 
-            <XAxis dataKey="bulan" />
+            <XAxis
+    dataKey="bulan"
+    tick={{
+        fontSize:12
+    }}
+/>
 
-            <YAxis />
+<YAxis
+    tick={{
+        fontSize:12
+    }}
+/>
 
             <Tooltip />
 
-            <Legend />
+            <Legend
+    wrapperStyle={{
+        fontSize:13
+    }}
+/>
 
             <Line
               type={lineType}

@@ -1,63 +1,185 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { Menu, X } from "lucide-react";
+
+import ThemeSwitcher from "./ThemeSwitcher";
+//import DarkModeToggle from "./DarkModeToggle";
+
+const menus = [
+  {
+    name: "Dashboard",
+    href: "/",
+  },
+  {
+    name: "Transparansi",
+    href: "/transparansi",
+  },
+  {
+    name: "Kegiatan",
+    href: "/kegiatan",
+  },
+  {
+    name: "Pengurus",
+    href: "/pengurus",
+  },
+  {
+    name: "Tentang",
+    href: "/tentang",
+  },
+];
+
 export default function Navbar() {
+  const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
 
-  const menus = [
-    ["Dashboard", "/"],
-    ["Transparansi", "/transparansi"],
-    ["Kegiatan", "/kegiatan"],
-    ["Pengurus", "/pengurus"],
-    ["Tentang", "/tentang"],
-  ];
-
   return (
-    <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
-      <div className="max-w-7xl mx-auto">
+    <header
+      className="
+      sticky
+      top-0
+      z-50
+      border-b
+      bg-background/90
+      backdrop-blur
+      border-border
+      "
+    >
+      <div className="mx-auto max-w-7xl px-4">
 
-        <div className="h-16 px-4 flex items-center justify-between">
+        <div className="flex h-14 items-center justify-between">
+
+          {/* Logo */}
 
           <Link
             href="/"
-            className="font-bold text-green-700 text-lg"
+            className="
+            text-base
+            md:text-lg
+            font-semibold
+            text-[var(--primary)]
+            "
           >
-            Portal Warga RT 07 RW 14 Bukit Amarilis
+           MyAmarilis
           </Link>
 
-          <nav className="hidden md:flex gap-8">
-            {menus.map(([label, href]) => (
-              <Link key={href} href={href}>
-                {label}
-              </Link>
-            ))}
+          {/* Desktop Menu */}
+
+          <nav className="hidden lg:flex items-center gap-5 text-sm">
+
+            {menus.map((menu) => {
+
+              const active =
+                pathname === menu.href;
+
+              return (
+                <Link
+                  key={menu.href}
+                  href={menu.href}
+                  className={`
+                  transition
+                  hover:text-[var(--primary)]
+                  ${
+                    active
+                      ? "font-semibold text-[var(--primary)]"
+                      : "text-foreground"
+                  }
+                  `}
+                >
+                  {menu.name}
+                </Link>
+              );
+            })}
+
           </nav>
 
+          {/* Right */}
+
+          <div className="hidden lg:flex items-center gap-3">
+
+            <ThemeSwitcher />
+
+
+          </div>
+
+          {/* Mobile */}
+
           <button
-            className="md:hidden"
             onClick={() => setOpen(!open)}
+            className="lg:hidden"
           >
-            {open ? <X /> : <Menu />}
+            {open ? (
+              <X size={22} />
+            ) : (
+              <Menu size={22} />
+            )}
           </button>
+
         </div>
 
-        {open && (
-          <div className="md:hidden border-t bg-white">
-            {menus.map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                className="block p-4 border-b"
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Mobile Menu */}
+
+      {open && (
+
+        <div
+          className="
+          lg:hidden
+          border-t
+          bg-background
+          border-border
+          "
+        >
+
+          <div className="flex flex-col">
+
+            {menus.map((menu) => {
+
+              const active =
+                pathname === menu.href;
+
+              return (
+                <Link
+                  key={menu.href}
+                  href={menu.href}
+                  onClick={() => setOpen(false)}
+                  className={`
+                  px-5
+                  py-3
+                  text-sm
+                  transition
+
+                  ${
+                    active
+                      ? "bg-[var(--primary)] text-white"
+                      : "hover:bg-muted"
+                  }
+                  `}
+                >
+                  {menu.name}
+                </Link>
+              );
+            })}
+
+            <div className="border-t p-4 space-y-3">
+
+              <ThemeSwitcher />
+
+            
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
     </header>
   );
 }

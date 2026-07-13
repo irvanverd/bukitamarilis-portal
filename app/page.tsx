@@ -51,7 +51,7 @@ export default async function HomePage() {
     <div className="space-y-6">
     {/* HERO DENGAN BACKGROUND IMAGE */}
     <section 
-      className="relative rounded-2xl bg-cover bg-center p-5 md:p-8 text-white shadow-md overflow-hidden"
+      className="relative rounded-2xl bg-cover bg-center p-5 md:p-6 text-white shadow-md overflow-hidden"
       style={{ backgroundImage: `url('https://i.ibb.co.com/F4x5fHKJ/Logo-Banner-Amarilis.png')` }}
      
     >
@@ -64,30 +64,15 @@ export default async function HomePage() {
           Portal Warga RT 07/XIV Bukit Amarilis
         </h1>
 
-        <p className="text-sm md:text-base text-slate-100">
+        <p className="text-xs text-slate-300 text-slate-100">
           Transparansi, Informasi, dan Komunikasi Warga dalam satu portal.
         </p>
 
-        <div className="mt-5 flex flex-wrap gap-2.5">
-            <Link
-              href="/transparansi"
-              className="px-5 py-3 rounded-xl bg-white text-green-700 font-semibold hover:bg-green-50 transition"
-            >
-              Laporan Keuangan
-            </Link>
-
-            <Link
-              href="/kegiatan"
-              className="px-5 py-3 rounded-xl border border-white text-white hover:bg-white/10 transition"
-            >
-              Kegiatan RT
-            </Link>
-          </div>
         </div>
       </section>
 
       {/* STATISTIK */}
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card title="Jumlah KK" value="124" color="bg-blue-50" emoji="👫"  />
         <Card title="Jumlah Warga" value="300" color="bg-green-50" emoji="👤"  />
         <Card title="Kegiatan Bulan Ini" value="8" color="bg-yellow-50" emoji="📆"  />
@@ -96,11 +81,11 @@ export default async function HomePage() {
 
       {/* KAS RT */}
       <section>
-        <div className="bg-white rounded-3xl shadow-sm border p-6">
+        <div className="bg-background rounded-3xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold">Ringkasan Kas RT</h2>
-              <p className="text-gray-500">Data berasal dari Google Sheet : lastupdate "Timestamp"</p>
+              <p className="text-slate-500 dark:text-slate-400">lastupdate "Timestamp"</p>
             </div>
 
             <Link href="/transparansi" className="text-green-600 font-medium">
@@ -120,7 +105,7 @@ export default async function HomePage() {
       <section>
         <h2 className="text-2xl font-bold mb-4">Menu Utama</h2>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MenuCard title="Transparansi" desc="Laporan keuangan RT" href="/transparansi" emoji="📊" />
           <MenuCard title="Kegiatan" desc="Agenda dan dokumentasi" href="/kegiatan" emoji="🎉" />
           <MenuCard title="Pengurus" desc="Susunan pengurus RT" href="/pengurus" emoji="👨🏻‍🎓" />
@@ -130,7 +115,7 @@ export default async function HomePage() {
 
       {/* BERITA & JADWAL */}
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="bg-white rounded-3xl border shadow-sm p-6">
+        <div className="bg-background rounded-3xl border shadow-sm p-6">
           <h2 className="text-xl font-bold mb-4">Informasi Terbaru</h2>
 
           <div className="space-y-4">
@@ -140,7 +125,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl border shadow-sm p-6">
+        <div className="bg-background rounded-3xl border shadow-sm p-6">
           <h2 className="text-xl font-bold mb-4">Agenda Mendatang</h2>
 
           <div className="space-y-4">
@@ -155,7 +140,7 @@ export default async function HomePage() {
   href="https://wa.me/6285691747527?text=Halo%20Admin%20Portal%20Warga%20RT%2007%2C%20saya%20ingin%20bertanya%20mengenai..."
   target="_blank"
   rel="noopener noreferrer"
-  className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-0.5 transition-all duration-300 group font-sans text-sm font-semibold"
+  className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-full shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-0.5 transition-all duration-300 group font-sans text-xs font-semibold"
 >
   {/* Logo SVG WhatsApp Resmi */}
   <svg
@@ -184,18 +169,18 @@ export default async function HomePage() {
 
 function Card({ title, value, color,emoji }: { title: string; value: string; color: string; emoji: string }) {
   return (
-    <div className={`${color} rounded-2xl p-5`}>
+    <div className={`${color} rounded-xl p-4 shadow-sm`}>
       <p className="text-gray-600">{title}</p>
-      <h3 className="text-3xl font-bold mt-2">{value}</h3>
-      <div className="text-4xl mb-3">{emoji}</div>
+      <h3 className="text-2xl font-semibold mt-1">{value}</h3>
+      <div className="text-2xl mb-2">{emoji}</div>
     </div>
   );
 }
 
 function KasCard({ title, value, color }: { title: string; value: number; color: string }) {
   return (
-    <div className="border rounded-2xl p-5">
-      <p className="text-gray-500">{title}</p>
+    <div className="border rounded-xl p-4 shadow-sm">
+      <p className="text-slate-500 dark:text-slate-400">{title}</p>
       <h3 className={`text-2xl font-bold mt-2 ${color}`}>
         Rp {Number(value).toLocaleString("id-ID")}
       </h3>
@@ -205,10 +190,10 @@ function KasCard({ title, value, color }: { title: string; value: number; color:
 
 function MenuCard({ title, desc, href, emoji }: { title: string; desc: string; href: string; emoji: string }) {
   return (
-    <Link href={href} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition block">
-      <div className="text-4xl mb-3">{emoji}</div>
-      <h3 className="font-bold text-lg">{title}</h3>
-      <p className="text-gray-500 mt-1">{desc}</p>
+    <Link href={href} className="bg-background border rounded-3xl p-6 hover:shadow-lg transition block">
+      <div className="text-2xl mb-3">{emoji}</div>
+      <h3 className="font-bold text-base font-semibold">{title}</h3>
+      <p className="text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
     </Link>
   );
 }
@@ -217,7 +202,7 @@ function NewsItem({ title, date }: { title: string; date: string }) {
   return (
     <div className="border-b pb-3 last:border-0 last:pb-0">
       <h3 className="font-semibold">{title}</h3>
-      <p className="text-sm text-gray-500">{date}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{date}</p>
     </div>
   );
 }
