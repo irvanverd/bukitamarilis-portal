@@ -1,6 +1,5 @@
 "use client";
-
-import { useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,10 +9,10 @@ export default function DaftarPage() {
 const [success, setSuccess] = useState(false);
 
 const [nomorReg, setNomorReg] = useState("");
-  const params = useSearchParams();
+  const params = useParams();
 
-  const idKegiatan = params.get("id") ?? "";
-  const namaKegiatan = params.get("nama") ?? "";
+  const idKegiatan = params.id as string;
+  const Kegiatan = params.namaKegiatan ?? "";
 
   const [loading, setLoading] = useState(false);
 
@@ -119,7 +118,7 @@ const [nomorReg, setNomorReg] = useState("");
             <div>
 
               <label className="block mb-2 text-sm font-medium">
-              {namaKegiatan}
+              {Kegiatan}
               </label>
 
               <input
