@@ -192,7 +192,7 @@ export default async function HalamanKegiatan() {
 
                   {item.flagDaftar === "Y" && (
     <Link
-    href={`/daftar?id=${item.id}&nama=${encodeURIComponent(item.nama)}`}
+    href={`/daftar/${item.id}?nama=${encodeURIComponent(item.nama)}`}
         className="
         inline-flex
         items-center
