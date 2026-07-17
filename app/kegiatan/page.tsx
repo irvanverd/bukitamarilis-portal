@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CommentSection from "@/components/CommentSection";
 
 export const dynamic = "force-dynamic";
 
@@ -211,7 +212,9 @@ export default async function HalamanKegiatan() {
     </Link>
 )}
 
+
                 </div>
+               
               </div>
 
 

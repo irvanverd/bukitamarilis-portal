@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CommentSection from "@/components/CommentSection";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,13 @@ export default async function DetailKegiatan({
             >
               {kegiatan.deskripsi}
             </div>
+            <div className="border-t border-slate-200 dark:border-slate-700 mt-6 pt-6">
 
+<CommentSection
+ kegiatanId={kegiatan.id}
+/>
+
+  </div>
           </div>
 
         </article>

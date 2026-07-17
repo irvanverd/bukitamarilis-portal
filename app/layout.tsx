@@ -28,7 +28,7 @@ export default function RootLayout({
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.myamarilis.web.id"),
+  metadataBase: new URL("https://www.myamarilis.id"),
 
   title: {
     default: "Portal Warga RT 07 RW 14 Bukit Amarilis",
@@ -49,13 +49,13 @@ export const metadata: Metadata = {
   ],
 
   openGraph: {
-    title: "Portal Warga RT 07 RW 14 Bukit Amarilis",
+    title: "Web Portal RT 07 RW 014 Bukit Amarilis",
     description:
-      "Website resmi RT 07 RW 14 Bukit Amarilis.",
+      "Website system informasi digital resmi RT 07 RW 14 Bukit Amarilis.",
 
-    url: "https://www.myamarilis.web.id",
+    url: "https://www.myamarilis.id",
 
-    siteName: "Portal Bukit Amarilis",
+    siteName: "Web Portal RT 07 RW 014 Bukit Amarilis",
 
     locale: "id_ID",
 
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Portal Bukit Amarilis",
+    title: "Portal Warga RT 07 RW 14 Bukit Amarilis",
     description: "Portal resmi RT 07 RW 14 Bukit Amarilis",
     images: ["https://i.ibb.co.com/F4x5fHKJ/Logo-Banner-Amarilis.png"],
   },
