@@ -1,3 +1,4 @@
+import { PesertaForm } from "@/types/lomba";
 export async function getJenisLomba(kategori: string) {
     const res = await fetch(
       `/api/lomba?kategori=${encodeURIComponent(kategori)}`
