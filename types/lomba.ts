@@ -53,3 +53,23 @@ export interface CekResponse{
     data:PesertaResult[];
 
 }
+export interface Peserta {
+
+  idPeserta:string;
+  tanggal:string;
+
+  alamat:string;
+
+  namaPeserta:string;
+
+  usia:number;
+
+  kategori:string;
+
+  noHp:string;
+
+  jenisLomba:string;
+
+  status:string;
+
+}

@@ -7,8 +7,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
   const kategori = searchParams.get("kategori");
+const q = searchParams.get("q");
+const action = searchParams.get("action");
+
   let url = API_URL;
-  const q = searchParams.get("q");
+  
+  if (action  === "list") {
+
+    url += "?action=list";
+  
+  } else
 
   if (q) {
 

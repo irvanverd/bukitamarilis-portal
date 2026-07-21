@@ -30,3 +30,13 @@ export async function getJenisLomba(kategori: string) {
     return await res.json();
 
 }
+
+export async function getListPeserta() {
+
+  const res = await fetch("/api/lomba?action=list",{
+    cache:"no-store"
+  });
+
+  return await res.json();
+
+}
