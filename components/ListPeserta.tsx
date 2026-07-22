@@ -8,6 +8,9 @@ import { JenisLomba, Peserta } from "@/types/lomba";
 import EditPeserta from "./EditPeserta";
 import { generatePesertaPDF } from "@/lib/generatePesertaPDF";
 import { printPeserta } from "@/lib/printPeserta";
+import { printList } from "@/lib/printList";
+import { generateListPDF } from "@/lib/generateListPDF";
+
 
 export default function ListPeserta() {
   const [loading, setLoading] = useState(true);
@@ -144,12 +147,30 @@ function onSuccess(message: string) {
   <button
     onClick={async () => {
       await fetch("/api/logout");
-      location.href = "/admin_lomba";
+      location.href = "/admin-lomba";
     }}
     className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2"
   >
     Logout
   </button>
+ 
+</div>
+<div className="flex gap-2">
+
+<button
+onClick={()=>printList(filtered,kategori,jenisLomba)}
+className="rounded-lg bg-blue-600 text-white px-4 py-2"
+>
+🖨 Print
+</button>
+
+<button
+onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
+className="rounded-lg bg-red-600 text-white px-4 py-2"
+>
+📄 PDF
+</button>
+
 </div>
       </div>
 

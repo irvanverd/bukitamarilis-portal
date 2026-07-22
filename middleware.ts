@@ -8,7 +8,7 @@ export function middleware(req: NextRequest) {
 
     if (!admin) {
       return NextResponse.redirect(
-        new URL("/admin_lomba", req.url)
+        new URL("/admin-lomba", req.url)
       );
     }
 
