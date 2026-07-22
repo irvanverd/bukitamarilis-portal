@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+
 export default function Login() {
 
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function Login() {
       <div className="bg-white rounded-xl shadow p-8 w-80 space-y-4">
 
         <h1 className="text-xl font-bold text-center">
-          Login Admin
+          Login
         </h1>
 
         <input
