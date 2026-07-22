@@ -8,7 +8,7 @@ export async function getJenisLomba(kategori: string) {
   }
   
   export async function daftarPeserta(data: PesertaForm) {
-    const res = await fetch("/api/lomba", {
+    const res = await fetch("/api/lomba?action=daftar", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -39,4 +39,16 @@ export async function getListPeserta() {
 
   return await res.json();
 
+}
+
+export async function updatePeserta(data: any) {
+  const res = await fetch("/api/lomba?action=update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  return await res.json();
 }

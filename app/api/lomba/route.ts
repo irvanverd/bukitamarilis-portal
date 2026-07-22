@@ -46,7 +46,19 @@ const action = searchParams.get("action");
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  const res = await fetch(API_URL, {
+  // Ambil parameter action dari URL
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get("action");
+
+  // URL default (daftar peserta)
+  let url = API_URL;
+
+  // Jika update, tambahkan action=update
+  if (action === "update") {
+    url += "?action=update";
+  }
+
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "text/plain;charset=utf-8",
@@ -57,6 +69,8 @@ export async function POST(req: NextRequest) {
   const text = await res.text();
 
   return new NextResponse(text, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
 }

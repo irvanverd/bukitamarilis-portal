@@ -14,6 +14,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { cekPeserta } from "@/lib/api";
 import { PesertaResult } from "@/types/lomba";
+import { generatePesertaPDF } from "@/lib/generatePesertaPDF";
+import { printPeserta } from "@/lib/printPeserta";
 
 export default function CekPeserta() {
   const [keyword, setKeyword] = useState("");
@@ -356,30 +358,19 @@ export default function CekPeserta() {
 
 <div className="border-t dark:border-zinc-700 p-5 flex flex-wrap gap-3">
 
-  <button
-    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg"
-    onClick={() => {
-      // nanti dipanggil generatePDF()
-      alert("Download Bukti (Coming Soon)");
-    }}
-  >
-    📄 Download Bukti
-  </button>
+<button
+  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg"
+  onClick={() => generatePesertaPDF(selected)}
+>
+  📄 Download Pdf
+</button>
 
-  <button
-    className="border dark:border-zinc-700 px-5 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
-    onClick={() => window.print()}
-  >
-    🖨 Cetak
-  </button>
-
-  <button
-    className="border dark:border-zinc-700 px-5 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
-    onClick={() => setSelected(null)}
-  >
-    Tutup
-  </button>
-
+<button
+  className="border dark:border-zinc-700 px-5 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+  onClick={() => printPeserta(selected)}
+>
+  🖨 Cetak
+</button>
 </div>
 
 </div>
