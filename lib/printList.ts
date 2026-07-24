@@ -16,6 +16,51 @@ type Group = {
   };
 };
 
+function getKategoriColor(Printkategori: string) {
+
+  switch (Printkategori.toLowerCase()) {
+
+    case "anak":
+    case "anak-anak":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    case "remaja":
+      return {
+        r: 37,
+        g: 99,
+        b: 235,
+      };
+
+    case "bapak/ibu":
+    case "dewasa":
+      return {
+        r: 147,
+        g: 51,
+        b: 234,
+      };
+
+    case "umum":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    default:
+      return {
+        r: 37,
+        g: 99,
+        b: 235,
+      };
+
+  }
+
+}
+
 /**
  * Group berdasarkan
  * Kategori -> Jenis Lomba
@@ -67,7 +112,9 @@ export function printList(
   if (!win) return;
 
   const today = new Date().toLocaleString("id-ID");
-
+  const color = getKategoriColor(kategori);
+  const bg =`rgb(${color.r},${color.g},${color.b})`;
+ 
   let html = `
 <!DOCTYPE html>
 
@@ -96,14 +143,13 @@ h1{
 
 }
 
-h2{
+    h2{
 
     margin-top:28px;
     margin-bottom:8px;
-    color:#dc2626;
+    color:${bg};
 
 }
-
 h3{
 
     margin-top:20px;
@@ -127,20 +173,21 @@ table{
 
 }
 
-th{
-
-    background:#dc2626;
-    color:white;
-    border:1px solid #ccc;
-    padding:7px;
-
-}
 
 td{
 
     border:1px solid #ccc;
     padding:7px;
     font-size:13px;
+
+}
+
+th{
+
+    background:${bg};
+    color:white;
+    border:1px solid #ccc;
+    padding:7px;
 
 }
 
@@ -225,11 +272,11 @@ if (kategori !== "Semua" && jenisLomba !== "Semua") {
   <thead>
   <tr>
   <th width="50">No</th>
+  <th width="70">ID Peserta</th>
   <th>Nama Peserta</th>
   <th>Alamat</th>
   <th width="70">Usia</th>
-  <th width="90">Status</th>
-  <th width="70">Hadir</th>
+  <th width="90">Keterangan</th>
   </tr>
   </thead>
   
@@ -242,14 +289,14 @@ if (kategori !== "Semua" && jenisLomba !== "Semua") {
   <tr>
   
   <td class="center">${index + 1}</td>
+
+   <td>${item.idPeserta}</td>
   
   <td>${item.namaPeserta}</td>
   
   <td>${item.alamat}</td>
   
   <td class="center">${item.usia}</td>
-  
-  <td class="center">${item.status}</td>
   
   <td></td>
   
@@ -275,7 +322,6 @@ if (kategori !== "Semua" && jenisLomba !== "Semua") {
     Object.keys(group)
       .sort()
       .forEach((namaKategori) => {
-  
         html += `
   <h2>${namaKategori}</h2>
   `;
@@ -305,6 +351,8 @@ if (kategori !== "Semua" && jenisLomba !== "Semua") {
   <tr>
   
   <th width="50">No</th>
+
+  <th width="70">ID Peserta</th>
   
   <th>Nama Peserta</th>
   
@@ -312,9 +360,7 @@ if (kategori !== "Semua" && jenisLomba !== "Semua") {
   
   <th width="70">Usia</th>
   
-  <th width="90">Status</th>
-  
-  <th width="70">Hadir</th>
+  <th width="90">keterangan</th>
   
   </tr>
   
@@ -329,14 +375,14 @@ if (kategori !== "Semua" && jenisLomba !== "Semua") {
   <tr>
   
   <td class="center">${index + 1}</td>
+
+   <td>${item.idPeserta}</td>
   
   <td>${item.namaPeserta}</td>
   
   <td>${item.alamat}</td>
   
   <td class="center">${item.usia}</td>
-  
-  <td class="center">${item.status}</td>
   
   <td></td>
   

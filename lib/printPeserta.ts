@@ -1,7 +1,57 @@
 import type { PesertaPDF } from "./generatePesertaPDF";
 
+function getKategoriColor(kategori: string) {
+
+  switch (kategori.toLowerCase()) {
+
+    case "anak":
+    case "anak-anak":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    case "remaja":
+      return {
+        r: 37,
+        g: 99,
+        b: 235,
+      };
+
+    case "bapak/ibu":
+    case "dewasa":
+      return {
+        r: 147,
+        g: 51,
+        b: 234,
+      };
+
+    case "umum":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    default:
+      return {
+        r: 75,
+        g: 85,
+        b: 99,
+      };
+
+  }
+
+}
+
+
 export function printPeserta(peserta: PesertaPDF) {
   const win = window.open("", "_blank");
+  const color = getKategoriColor(peserta.kategori);
+
+const bg =
+`rgb(${color.r},${color.g},${color.b})`;
 
   if (!win) return;
 
@@ -43,7 +93,7 @@ overflow:hidden;
 
 .header{
 
-background:#dc2626;
+background:${bg};
 
 color:#fff;
 
@@ -276,7 +326,7 @@ ${peserta.lomba
 
 <div class="footer">
 
-Portal Bukit Amarilis © 2026
+RT 07 / XIV Bukit Amarilis © 2026
 
 </div>
 

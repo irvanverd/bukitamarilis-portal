@@ -9,9 +9,56 @@ export interface PesertaPDF {
   lomba: string[];
 }
 
+function getKategoriColor(kategori: string) {
+
+  switch (kategori.toLowerCase()) {
+
+    case "anak":
+    case "anak-anak":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    case "remaja":
+      return {
+        r: 37,
+        g: 99,
+        b: 235,
+      };
+
+    case "bapak/ibu":
+    case "dewasa":
+      return {
+        r: 147,
+        g: 51,
+        b: 234,
+      };
+
+    case "umum":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    default:
+      return {
+        r: 75,
+        g: 85,
+        b: 99,
+      };
+
+  }
+
+}
+
 export async function generatePesertaPDF(
   peserta: PesertaPDF
 ) {
+
+  const color = getKategoriColor(peserta.kategori);
 
   const pdf = new jsPDF({
     orientation: "landscape",
@@ -21,6 +68,7 @@ export async function generatePesertaPDF(
 
   const W = 148;
   const H = 160;
+
 
   // ===========================================
   // QR CODE
@@ -52,7 +100,12 @@ ${peserta.lomba.join("\n")}
   // HEADER
   // ===========================================
 
-  pdf.setFillColor(220, 38, 38);
+  //pdf.setFillColor(220, 38, 38);
+  pdf.setFillColor(
+    color.r,
+    color.g,
+    color.b
+);
   pdf.rect(0, 0, W, 18, "F");
 
   pdf.setTextColor(255);

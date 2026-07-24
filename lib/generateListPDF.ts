@@ -48,6 +48,50 @@ function buildGroup(data: PesertaList[]): Group {
 
   return result;
 }
+function getKategoriColor(kategori: string) {
+
+  switch (kategori.toLowerCase()) {
+
+    case "anak":
+    case "anak-anak":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    case "remaja":
+      return {
+        r: 37,
+        g: 99,
+        b: 235,
+      };
+
+    case "bapak/ibu":
+    case "dewasa":
+      return {
+        r: 147,
+        g: 51,
+        b: 234,
+      };
+
+    case "umum":
+      return {
+        r: 220,
+        g: 38,
+        b: 38,
+      };
+
+    default:
+      return {
+        r: 75,
+        g: 85,
+        b: 99,
+      };
+
+  }
+
+}
 
 /**
  * Generate PDF List Peserta
@@ -63,6 +107,7 @@ export function generateListPDF(
     unit: "mm",
     format: "a4",
   });
+  const color1 = getKategoriColor(kategori);
 
   const today = new Date().toLocaleString("id-ID");
 
@@ -123,18 +168,20 @@ export function generateListPDF(
 
       head: [[
         "No",
+        "ID Peserta",
         "Nama",
         "Alamat",
         "Usia",
-        "Status",
+        "Keterangan",
       ]],
 
       body: data.map((item, i) => [
         i + 1,
+        item.idPeserta,
         item.namaPeserta,
         item.alamat,
         item.usia,
-        item.status,
+        "",
       ]),
 
       styles: {
@@ -142,7 +189,9 @@ export function generateListPDF(
       },
 
       headStyles: {
-        fillColor: [220, 38, 38],
+        fillColor: [color1.r,
+          color1.g,
+          color1.b],
       },
     });
 
@@ -187,6 +236,8 @@ kategoriList.forEach((namaKategori, indexKategori) => {
 
   const lombaList = Object.keys(lombaGroup).sort();
 
+  const color = getKategoriColor(namaKategori);
+
   lombaList.forEach((namaLomba) => {
 
     const peserta = lombaGroup[namaLomba];
@@ -217,15 +268,18 @@ kategoriList.forEach((namaKategori, indexKategori) => {
 
       head: [[
         "No",
-        "Nama Peserta",
+        "ID Peserta",
+        "Nama",
         "Alamat",
         "Usia",
-        "Status",
+        "Keterangan",
       ]],
 
       body: peserta.map((item, i) => [
 
         i + 1,
+
+        item.idPeserta,
 
         item.namaPeserta,
 
@@ -233,7 +287,7 @@ kategoriList.forEach((namaKategori, indexKategori) => {
 
         item.usia,
 
-        item.status,
+        "",
 
       ]),
 
@@ -249,7 +303,9 @@ kategoriList.forEach((namaKategori, indexKategori) => {
 
       headStyles: {
 
-        fillColor: [220, 38, 38],
+        fillColor: [color.r,
+          color.g,
+          color.b],
 
         textColor: 255,
 
