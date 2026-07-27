@@ -33,6 +33,8 @@ export default function ListPeserta() {
 
 const [showView, setShowView] = useState(false);
 
+const [showSummary, setShowSummary] = useState(false);
+
 
 
 const [toast, setToast] = useState<{
@@ -120,6 +122,51 @@ function onSuccess(message: string) {
     return data;
   }, [peserta, kategori, jenisLomba, keyword]);
 
+  /** Summary **/
+
+  const summary = useMemo(() => {
+
+    const kategori = {
+      Anak: 0,
+      Remaja: 0,
+      "Bapak/Ibu": 0,
+      Umum: 0,
+    };
+  
+    const lomba: Record<string, number> = {};
+  
+    filtered.forEach((p) => {
+  
+      const k = p.kategori.trim();
+  
+      if (kategori[k as keyof typeof kategori] !== undefined) {
+        kategori[k as keyof typeof kategori]++;
+      }
+  
+      p.jenisLomba
+        .split(",")
+        .map(x => x.trim())
+        .forEach(item => {
+  
+          lomba[item] = (lomba[item] || 0) + 1;
+  
+        });
+  
+    });
+  
+    return {
+  
+      total: filtered.length,
+  
+      kategori,
+  
+      lomba,
+  
+    };
+  
+  }, [filtered]);
+
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
 
@@ -143,35 +190,7 @@ function onSuccess(message: string) {
           </div>
 
         </div>
-        <div className="flex justify-end mb-4">
-  <button
-    onClick={async () => {
-      await fetch("/api/logout");
-      location.href = "/admin-lomba";
-    }}
-    className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2"
-  >
-    Logout
-  </button>
- 
-</div>
-<div className="flex gap-2">
 
-<button
-onClick={()=>printList(filtered,kategori,jenisLomba)}
-className="rounded-lg bg-blue-600 text-white px-4 py-2"
->
-🖨 Print
-</button>
-
-<button
-onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
-className="rounded-lg bg-red-600 text-white px-4 py-2"
->
-📄 PDF
-</button>
-
-</div>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow border p-6">
@@ -216,7 +235,92 @@ className="rounded-lg bg-red-600 text-white px-4 py-2"
               onChange={(e) => setKeyword(e.target.value)}
             />
 
-          </div>
+          </div>  
+
+
+          <div className="flex gap-2">
+
+<button
+onClick={()=>printList(filtered,kategori,jenisLomba)}
+className="rounded-lg bg-blue-600 text-white px-4 py-2"
+>
+🖨 Print
+</button>
+
+<button
+onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
+className="rounded-lg bg-red-600 text-white px-4 py-2"
+>
+📄 PDF
+</button>
+  <button
+    onClick={async () => {
+      await fetch("/api/logout");
+      location.href = "/admin-lomba";
+    }}
+    className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2"
+  >
+    Logout
+  </button>
+
+</div>
+
+      {/* Tombol Show/Hide Summary */}
+      <div className="rounded-xl border bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+
+<button
+  onClick={() => setShowSummary(v => !v)}
+  className="w-full flex items-center justify-between px-4 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800"
+>
+  <span>📊 Ringkasan Peserta</span>
+
+  <span>
+    {showSummary ? "▲" : "▼"}
+  </span>
+
+</button>
+
+{/* DISINI */}
+{showSummary && (
+
+  <div className="p-4 space-y-4">
+
+    
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+{Object.entries(summary.lomba)
+.sort((a,b)=>b[1]-a[1])
+.map(([nama,jumlah])=>(
+
+<div
+key={nama}
+className="rounded-lg border bg-white dark:bg-zinc-900 p-3 shadow-sm"
+>
+
+<div className="text-sm text-gray-500">
+
+{nama}
+
+</div>
+
+<div className="text-2xl font-bold">
+
+{jumlah}
+
+</div>
+
+</div>
+
+))}
+
+</div>
+
+  </div>
+
+)}
+
+</div>
+
 
         </div>
 

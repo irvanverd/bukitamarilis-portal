@@ -1,6 +1,29 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
+async function imageToBase64(path:string){
+
+  const res = await fetch(path);
+
+  const blob = await res.blob();
+
+  return await new Promise<string>((resolve)=>{
+
+      const reader = new FileReader();
+
+      reader.onloadend=()=>{
+
+          resolve(reader.result as string);
+
+      }
+
+      reader.readAsDataURL(blob);
+
+  });
+
+}
+
+
 export interface PesertaPDF {
   idPeserta: string;
   namaPeserta: string;
@@ -53,12 +76,30 @@ function getKategoriColor(kategori: string) {
   }
 
 }
+async function getKategoriLogo(kategori: string) {
+
+  switch (kategori.trim().toLowerCase()) {
+
+    case "anak":
+    case "anak-anak":
+      return await imageToBase64("/assets/hut-ri-81-white.png");
+
+
+    default:
+      return await imageToBase64("/assets/hut-ri-81-red.png");
+  }
+
+}
 
 export async function generatePesertaPDF(
   peserta: PesertaPDF
 ) {
 
   const color = getKategoriColor(peserta.kategori);
+  const logoHUT =  await getKategoriLogo(peserta.kategori);
+  const logoRT = await imageToBase64("/assets/logo-rt.png");
+
+
 
   const pdf = new jsPDF({
     orientation: "landscape",
@@ -96,6 +137,7 @@ ${peserta.lomba.join("\n")}
   pdf.setFillColor(250, 250, 250);
   pdf.rect(0, 0, W, H, "F");
 
+
   // ===========================================
   // HEADER
   // ===========================================
@@ -108,20 +150,42 @@ ${peserta.lomba.join("\n")}
 );
   pdf.rect(0, 0, W, 18, "F");
 
-  pdf.setTextColor(255);
+// ============================
+// LOGO
+// ============================
 
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(15);
+pdf.addImage(
+  logoRT,
+  "PNG",
+  5,      // X kiri
+  2,      // Y atas
+  14,     // lebar
+  14      // tinggi
+);
 
-  pdf.text("HUT RI 81", 8, 11);
+pdf.addImage(
+  logoHUT,
+  "PNG",
+  129,    // X kanan (untuk A6 Landscape)
+  2,
+  14,
+  14
+);
 
-  pdf.setFontSize(11);
+// ============================
+// TEXT HEADER
+// ============================
 
-  pdf.text(
-    "RT 07/XIV BUKIT AMARILIS",
-    45,
-    11
-  );
+pdf.setTextColor(255);
+
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(15);
+
+// Geser tulisan supaya tidak menabrak logo
+//pdf.text("HUT RI 81", 24, 11);
+
+pdf.setFontSize(11);
+pdf.text("RT 07/XIV BUKIT AMARILIS", 52, 11);
 
   // ===========================================
   // TITLE
@@ -144,7 +208,7 @@ ${peserta.lomba.join("\n")}
 
   pdf.setDrawColor(220);
 
-  pdf.roundedRect(8, 29, 88, 44, 2, 2);
+  pdf.roundedRect(8, 29, 88, 39, 2, 2);
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
@@ -276,7 +340,7 @@ ${peserta.lomba.join("\n")}
     
       const boxHeight = Math.max(
         18,
-        contentHeight + titleHeight + 4
+        contentHeight + titleHeight
       );
     
       // Box
@@ -352,9 +416,9 @@ ${peserta.lomba.join("\n")}
       pdf.setTextColor(120);
     
       pdf.text(
-        "Bukit Amarilis • Perumahan Citra Indah City • Bogor",
+        "Bukit Amarilis • Citra Indah City • Bogor",
         W / 2,
-        boxY + boxHeight + 5,
+        boxY + boxHeight + 4,
         {
           align: "center",
         }

@@ -280,7 +280,6 @@ return;
           <option value="Bapak/Ibu">Bapak / Ibu</option>
           <option value="Remaja">Remaja</option>
           <option value="Anak-anak">Anak-anak</option>
-          <option value="Umum">Umum</option>
           
         </select>
           

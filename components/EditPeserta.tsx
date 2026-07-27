@@ -6,6 +6,17 @@ import { Loader2, Save, X } from "lucide-react";
 import { getJenisLomba, updatePeserta } from "@/lib/api";
 import { JenisLomba, Peserta } from "@/types/lomba";
 
+function getCookie(name: string) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift();
+  }
+
+  return null;
+}
+
 interface Props{
   open:boolean;
   peserta:Peserta|null;
@@ -157,7 +168,7 @@ export default function EditPeserta({
     try {
 
       setLoading(true);
-
+      const updateuser = getCookie("admin_user");
       const result =
         await updatePeserta({
 
@@ -176,6 +187,9 @@ export default function EditPeserta({
           jenisLomba: selectedLomba,
 
           status,
+
+          lastUpdateUser:updateuser
+
 
         });
 

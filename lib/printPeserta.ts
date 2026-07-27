@@ -93,11 +93,39 @@ overflow:hidden;
 
 .header{
 
+display:flex;
+
+align-items:center;
+
+justify-content:space-between;
+
 background:${bg};
 
 color:#fff;
 
-padding:18px 24px;
+padding:16px 22px;
+
+gap:18px;
+
+}
+
+.logo{
+
+width:60px;
+
+height:60px;
+
+object-fit:contain;
+
+flex-shrink:0;
+
+}
+
+.header-center{
+
+flex:1;
+
+text-align:center;
 
 }
 
@@ -107,15 +135,19 @@ margin:0;
 
 font-size:24px;
 
+font-weight:bold;
+
+line-height:1.2;
+
 }
 
 .header p{
 
-margin-top:6px;
+margin:4px 0 0;
 
 font-size:14px;
 
-opacity:.9;
+opacity:.95;
 
 }
 
@@ -249,11 +281,21 @@ box-shadow:none;
 
 <div class="header">
 
-<h1>BUKTI PENDAFTARAN LOMBA</h1>
+   <img
+        src="/assets/logo-rt.png"
+        class="logo"
+    />
 
-<p>RT 07/XIV Bukit Amarilis</p>
+<h1>RT 07/XIV Bukit Amarilis</h1>
+
+  <img
+        src="/assets/hut-ri-81-white.png"
+        class="logo"
+    />
+
 
 </div>
+<div><p>BUKTI PENDAFTARAN LOMBA</p></div>
 
 <div class="content">
 
@@ -326,7 +368,7 @@ ${peserta.lomba
 
 <div class="footer">
 
-RT 07 / XIV Bukit Amarilis © 2026
+Bukit Amarilis • Citra Indah City • Bogor
 
 </div>
 
