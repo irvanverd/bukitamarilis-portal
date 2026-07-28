@@ -34,10 +34,25 @@ export default function Login() {
 
     if (json.success) {
       router.replace("/list-peserta");
+      
       return;
     }
 
     alert("nama panitia atau Password salah.");
+
+  }
+
+  async function logout() {
+
+    setLoading(true);
+
+    const res = await fetch("/api/logout", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
 
   }
 

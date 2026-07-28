@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Search, Users } from "lucide-react";
+import Link from "next/link";
 
 import { getJenisLomba, getListPeserta } from "@/lib/api";
 import { JenisLomba, Peserta } from "@/types/lomba";
@@ -70,6 +71,16 @@ function getCookie(name: string) {
 
 }
 
+function deleteCookie(name: string) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
+function logout() {
+  deleteCookie("admin");
+  deleteCookie("admin_user");
+
+  window.location.href = "/";
+}
   async function loadData() {
     setLoading(true);
 
@@ -200,6 +211,27 @@ function getCookie(name: string) {
               Total Peserta :{" "}
               <b>{filtered.length}</b>
             </p>
+            {loginUser === "" ? (
+  <a
+    href="/admin-lomba"
+    className="rounded-lg bg-blue-300 text-white px-3 py-2 inline-block"
+  >
+    Admin
+  </a>
+) : (
+  <a
+  href="/admin-lomba"
+  onClick={(e) => {
+    e.preventDefault();
+    logout();
+  }}
+  className="rounded-lg bg-red-600 text-white px-3 py-2 inline-block"
+>
+  Logout
+</a>
+
+  
+)}
   
           </div>
 
