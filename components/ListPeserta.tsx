@@ -94,9 +94,10 @@ function logout() {
   }
 
   useEffect(() => {
-    loadData();
     const user = getCookie("admin_user");
     setLoginUser(user ?? "");
+    loadData();
+
   }, []);
 
   useEffect(() => {
@@ -136,13 +137,13 @@ function logout() {
 
       data = data.filter(
         (x) =>
-          x.namaPeserta.toLowerCase().includes(key) ||
-          x.alamat.toLowerCase().includes(key) ||
-          x.idPeserta.toLowerCase().includes(key)
+          String(x.namaPeserta ?? "").toLowerCase().includes(key) ||
+        String(x.namaPeserta ?? "").toLowerCase().includes(key) ||
+        String(x.namaPeserta ?? "").toLowerCase().includes(key)
       );
     }
 
-    //data.sort((a, b) => a.usia - b.usia);
+    data.sort((a, b) => a.usia - b.usia);
 
     return data;
   }, [peserta, kategori, jenisLomba, keyword]);
@@ -480,15 +481,13 @@ className="rounded-lg border bg-white dark:bg-zinc-900 p-3 shadow-sm"
         View
       </span>
     </button>
-
-    {/* Edit */}
-
+    
     {loginUser && (
-
 <button
   onClick={() => {
-    setSelectedPeserta(item);
+    setEditPeserta(item); 
     setShowEdit(true);
+
   }}
   className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white p-2"
   title="Edit"

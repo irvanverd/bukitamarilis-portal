@@ -33,11 +33,21 @@ export async function getJenisLomba(kategori: string) {
 
 export async function getListPeserta() {
 
-  const res = await fetch("/api/lomba?action=list",{
-    cache:"no-store"
+  const res = await fetch("/api/lomba?action=list", {
+    cache: "no-store",
   });
 
-  return await res.json();
+  console.log("Status :", res.status);
+
+  const text = await res.text();
+
+  console.log("Response :", text);
+
+  if (!text.trim()) {
+    throw new Error("Response kosong dari server.");
+  }
+
+  return JSON.parse(text);
 
 }
 

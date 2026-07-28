@@ -29,16 +29,29 @@ const action = searchParams.get("action");
     )}`;
 
   }
-  //console.log("API_URL :", API_URL);
-  //console.log("q :", q);
-  console.log("Final URL :", url);
-  const res = await fetch(url,{
-    cache:"no-store"
-  });
+  const response = await fetch(url);
 
-  const json = await res.json();
+const text = await response.text();
 
-  return NextResponse.json(json);
+if (!text.trim()) {
+
+    return Response.json(
+        {
+            success:false,
+            message:"Apps Script tidak mengirim response."
+        },
+        {
+            status:500
+        }
+    );
+
+}
+
+return new Response(text,{
+    headers:{
+        "Content-Type":"application/json"
+    }
+});
   
 
 }
