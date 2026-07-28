@@ -22,7 +22,7 @@ export default function DaftarLombaPage() {
     </p>
 
     <Link
-        href="/cek-peserta"
+        href="/list-peserta"
         className="inline-flex items-center border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition px-4 py-2 rounded-lg font-medium"
     >
         🔍 Cari 
