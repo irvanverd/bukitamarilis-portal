@@ -269,11 +269,6 @@ pdf.text("RT 07/XIV BUKIT AMARILIS", 52, 11);
   pdf.setFontSize(8);
   pdf.setTextColor(100);
 
-  pdf.text(
-    "Scan saat registrasi ulang",
-    103,
-    69
-  );
 
   // ===========================================
   // LOMBA YANG DIIKUTI

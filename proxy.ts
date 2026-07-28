@@ -2,22 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(req: NextRequest) {
 
-  if (req.nextUrl.pathname.startsWith("/list-peserta")) {
+//  if (req.nextUrl.pathname.startsWith("/list-peserta")) {
 
-    const admin = req.cookies.get("admin");
+//    const admin = req.cookies.get("admin");
 
-    if (!admin) {
-      return NextResponse.redirect(
-        new URL("/admin-lomba", req.url)
-      );
-    }
+//    if (!admin) {
+//      return NextResponse.redirect(
+//        new URL("/admin-lomba", req.url)
+//      );
+//    }
 
-  }
+//  }
 
-  return NextResponse.next();
+//  return NextResponse.next();
 
-}
+//}
 
-export const config = {
-  matcher: ["/list-peserta/:path*"],
+//export const config = {
+//  matcher: ["/list-peserta/:path*"],
 };

@@ -344,9 +344,6 @@ src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURICo
 width="170"
 />
 
-<div style="margin-top:10px;font-size:13px">
-Scan saat registrasi ulang
-</div>
 
 </div>
 

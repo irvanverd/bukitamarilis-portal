@@ -25,6 +25,22 @@ export async function POST(req: NextRequest) {
     maxAge: 60 * 60 * 8,
   });
 
+  // Cookie untuk UI
+res.cookies.set("admin_ui", "1", {
+  httpOnly: false,
+  sameSite: "lax",
+  path: "/",
+  maxAge: 60 * 60 * 8,
+});
+
+// Nama user untuk UI
+res.cookies.set("admin_user", body.username || "Admin", {
+  httpOnly: false,
+  sameSite: "lax",
+  path: "/",
+  maxAge: 60 * 60 * 8,
+});
+
   // Penanda sudah login
   res.cookies.set("admin", "1", {
     httpOnly: true,
@@ -32,6 +48,7 @@ export async function POST(req: NextRequest) {
     path: "/",
     maxAge: 60 * 60 * 8,
   });
+
 
   return res;
 }

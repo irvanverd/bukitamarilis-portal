@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Search, Users } from "lucide-react";
 
@@ -34,8 +33,7 @@ export default function ListPeserta() {
 const [showView, setShowView] = useState(false);
 
 const [showSummary, setShowSummary] = useState(false);
-
-
+const [loginUser, setLoginUser] = useState("");
 
 const [toast, setToast] = useState<{
   show: boolean;
@@ -58,6 +56,20 @@ function onSuccess(message: string) {
   }, 2500);
 }
 
+function getCookie(name: string) {
+
+  const value = `; ${document.cookie}`;
+
+  const parts = value.split(`; ${name}=`);
+
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift();
+  }
+
+  return null;
+
+}
+
   async function loadData() {
     setLoading(true);
 
@@ -72,6 +84,8 @@ function onSuccess(message: string) {
 
   useEffect(() => {
     loadData();
+    const user = getCookie("admin_user");
+    setLoginUser(user ?? "");
   }, []);
 
   useEffect(() => {
@@ -117,7 +131,7 @@ function onSuccess(message: string) {
       );
     }
 
-    data.sort((a, b) => a.usia - b.usia);
+    //data.sort((a, b) => a.usia - b.usia);
 
     return data;
   }, [peserta, kategori, jenisLomba, keyword]);
@@ -186,11 +200,20 @@ function onSuccess(message: string) {
               Total Peserta :{" "}
               <b>{filtered.length}</b>
             </p>
-
+  
           </div>
 
         </div>
-
+        <div className="flex justify-end">
+        <button
+   onClick={() => {
+    window.location.href = "/daftar-lomba";
+  }}
+    className="ml-auto rounded-lg bg-orange-600 text-white px-4 py-2"
+    > 
+    📄 Daftar
+    </button> 
+    </div>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow border p-6">
@@ -236,36 +259,27 @@ function onSuccess(message: string) {
             />
 
           </div>  
-
-
+          {loginUser && (   
           <div className="flex gap-2">
 
-<button
-onClick={()=>printList(filtered,kategori,jenisLomba)}
-className="rounded-lg bg-blue-600 text-white px-4 py-2"
->
-🖨 Print
-</button>
+         
+    <button
+    onClick={()=>printList(filtered,kategori,jenisLomba)}
+    className="rounded-lg bg-blue-600 text-white px-4 py-2"
+    >
+    🖨 Print
+    </button>
 
-<button
-onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
-className="rounded-lg bg-red-600 text-white px-4 py-2"
->
-📄 PDF
-</button>
-  <button
-    onClick={async () => {
-      await fetch("/api/logout");
-      location.href = "/admin-lomba";
-    }}
-    className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2"
-  >
-    Logout
-  </button>
+    <button
+    onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
+    className="rounded-lg bg-red-600 text-white px-4 py-2"
+    >
+    📄 PDF
+    </button> 
+</div> )}
 
-</div>
 
-      {/* Tombol Show/Hide Summary */}
+                  {/* Tombol Show/Hide Summary */}
       <div className="rounded-xl border bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
 
 <button
@@ -318,11 +332,9 @@ className="rounded-lg border bg-white dark:bg-zinc-900 p-3 shadow-sm"
   </div>
 
 )}
+</div> 
 
-</div>
-
-
-        </div>
+      </div>
 
       </div>
 
@@ -438,21 +450,26 @@ className="rounded-lg border bg-white dark:bg-zinc-900 p-3 shadow-sm"
     </button>
 
     {/* Edit */}
-    <button
-      onClick={() => {
-        setEditPeserta(item);
-        setShowEdit(true);
-      }}
-      className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white p-2"
-      title="Edit"
-    >
-      <Pencil size={18} />
 
-      <span className="hidden md:inline ml-1">
-        Edit
-      </span>
-    </button>
+    {loginUser && (
 
+<button
+  onClick={() => {
+    setSelectedPeserta(item);
+    setShowEdit(true);
+  }}
+  className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white p-2"
+  title="Edit"
+>
+  <Pencil size={18} />
+
+  <span className="hidden md:inline ml-1">
+    Edit
+  </span>
+</button>
+
+)}
+    
   </div>
 </td>
                 </tr>
