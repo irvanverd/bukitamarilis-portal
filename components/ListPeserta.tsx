@@ -12,6 +12,7 @@ import { printList } from "@/lib/printList";
 import { generateListPDF } from "@/lib/generateListPDF";
 
 
+
 export default function ListPeserta() {
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +35,8 @@ export default function ListPeserta() {
 const [showView, setShowView] = useState(false);
 
 const [showSummary, setShowSummary] = useState(false);
+const [showAction, setShowAction] = useState(false);
+
 const [loginUser, setLoginUser] = useState("");
 
 const [toast, setToast] = useState<{
@@ -138,8 +141,9 @@ function logout() {
       data = data.filter(
         (x) =>
           String(x.namaPeserta ?? "").toLowerCase().includes(key) ||
-        String(x.namaPeserta ?? "").toLowerCase().includes(key) ||
-        String(x.namaPeserta ?? "").toLowerCase().includes(key)
+        String(x.idPeserta ?? "").toLowerCase().includes(key) ||
+        String(x.alamat ?? "").toLowerCase().includes(key) ||
+        String(x.noHp ?? "").toLowerCase().includes(key)
       );
     }
 
@@ -292,25 +296,60 @@ function logout() {
             />
 
           </div>  
+        
           {loginUser && (   
-          <div className="flex gap-2">
+<div className="rounded-xl border bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
 
-         
-    <button
-    onClick={()=>printList(filtered,kategori,jenisLomba)}
-    className="rounded-lg bg-blue-600 text-white px-4 py-2"
-    >
-    🖨 Print
-    </button>
+  <button
+    onClick={() => setShowAction(v => !v)}
+    className="w-full flex items-center justify-between px-4 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800"
+  >
+    <span>🖨 Print & Export</span>
 
-    <button
-    onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
-    className="rounded-lg bg-red-600 text-white px-4 py-2"
-    >
-    📄 PDF
-    </button> 
+    <span>{showAction ? "▲" : "▼"}</span>
+  </button>
+
+  {showAction && (
+
+    <div className="border-t dark:border-zinc-700 p-4">
+
+      <div className="flex flex-wrap gap-3">
+
+        <button
+          onClick={()=>printList(filtered,kategori,jenisLomba)}
+          className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
+        >
+          🖨 Print List
+        </button>
+
+        <button
+         onClick={()=>generateListPDF(filtered,kategori,jenisLomba)}
+          className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2"
+        >
+          📄 PDF List
+        </button>
+
+        <button
+            onClick={()=>printList(filtered,kategori,jenisLomba)} //printCard(filtered)
+          className="hidden rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2"
+        >
+          🪪 Print Kartu
+        </button>
+
+        <button
+        onClick={()=>generateListPDF(filtered,kategori,jenisLomba)} //generateCardPDF(filtered)}
+          className="hidden rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-4 py-2"
+        >
+          📄 PDF Kartu
+        </button>
+
+      </div>
+
+    </div>
+
+  )}
+
 </div> )}
-
 
                   {/* Tombol Show/Hide Summary */}
       <div className="rounded-xl border bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
