@@ -10,6 +10,7 @@ import { generatePesertaPDF } from "@/lib/generatePesertaPDF";
 import { printPeserta } from "@/lib/printPeserta";
 import { printList } from "@/lib/printList";
 import { generateListPDF } from "@/lib/generateListPDF";
+import generateCardPDF from "@/lib/generateCardPDF";
 
 
 
@@ -337,11 +338,22 @@ function logout() {
         </button>
 
         <button
-        onClick={()=>generateListPDF(filtered,kategori,jenisLomba)} //generateCardPDF(filtered)}
-          className="hidden rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-4 py-2"
-        >
-          📄 PDF Kartu
-        </button>
+        
+  onClick={async () => {
+
+    const ok = window.confirm(
+      `Cetak ${filtered.length} kartu peserta ke dalam 1 file PDF?\n\nProses mungkin memerlukan beberapa detik.`
+    );
+
+    if (!ok) return;
+
+    await generateCardPDF(filtered);
+
+  }}
+   className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2"
+>
+🪪 PDF Kartu
+</button>
 
       </div>
 
