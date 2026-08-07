@@ -1,79 +1,45 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CommentSection from "@/components/CommentSection";
+import ImageSlider from "@/components/ImageSlider";
+import { Metadata } from "next";
+import { getKegiatan } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
-
-interface Kegiatan {
-  id: string;
-  nama: string;
-  tanggal: string;
-  tanggal_sunting?: string;
-  deskripsi: string;
-  foto: string;
-
-  flagDaftar?: string;
-  urlDaftar?: string;
-}
-
 export default async function DetailKegiatan({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SHEETDB_URL}?sheet=kegiatan`,
-    {
-      cache: "no-store",
-    }
-  );
-
-  const data: Kegiatan[] = res.ok ? await res.json() : [];
-
-  const kegiatan = data.find((x) => x.id === id);
+  const kegiatan = await getKegiatan(id);
 
   if (!kegiatan) {
     notFound();
   }
 
+
+  const photos: string[] = (kegiatan.foto ?? "")
+  .split("|")
+  .map((x: string) => x.trim())
+  .filter((x: string) => x !== "");
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 px-4">
-
       <div className="mx-auto max-w-4xl">
 
         <Link
           href="/kegiatan"
-          className="
-            mb-6
-            inline-flex
-            text-sm
-            text-[var(--primary)]
-            hover:underline
-          "
+          className="mb-6 inline-flex text-sm text-[var(--primary)] hover:underline"
         >
           ← Kembali ke daftar kegiatan
         </Link>
 
-        <article
-          className="
-            overflow-hidden
-            rounded-2xl
-            bg-white
-            dark:bg-slate-900
-            shadow
-          "
-        >
+        <article className="overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow">
 
-          <img
-            src={
-              kegiatan.foto?.trim()
-                ? kegiatan.foto
-                : "/images/no-image.jpg"
-            }
-            alt={kegiatan.nama}
-            className="w-full h-72 object-cover"
+          <ImageSlider
+            images={photos}
+            title={kegiatan.nama}
           />
 
           <div className="p-8">
@@ -108,19 +74,64 @@ export default async function DetailKegiatan({
             >
               {kegiatan.deskripsi}
             </div>
+
             <div className="border-t border-slate-200 dark:border-slate-700 mt-6 pt-6">
 
-<CommentSection
- kegiatanId={kegiatan.id}
-/>
+              <CommentSection kegiatanId={kegiatan.id} />
 
-  </div>
+            </div>
+
           </div>
 
         </article>
 
       </div>
-
     </main>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+
+  const kegiatan = await getKegiatan(id);
+
+  if (!kegiatan) {
+    return {
+      title: "Kegiatan tidak ditemukan",
+    };
+  }
+
+  const image =
+    kegiatan.foto?.trim() || "https://www.myamarilis.id/images/og-default.jpg";
+
+  return {
+    title: kegiatan.nama,
+    description: kegiatan.deskripsi.substring(0, 160),
+
+    openGraph: {
+      title: kegiatan.nama,
+      description: kegiatan.deskripsi.substring(0, 160),
+      url: `https://www.myamarilis.id/kegiatan/${id}`,
+      type: "article",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: kegiatan.nama,
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title: kegiatan.nama,
+      description: kegiatan.deskripsi.substring(0, 160),
+      images: [image],
+    },
+  };
 }

@@ -1,4 +1,5 @@
 import { PesertaForm } from "@/types/lomba";
+
 export async function getJenisLomba(kategori: string) {
     const res = await fetch(
       `/api/lomba?kategori=${encodeURIComponent(kategori)}`
@@ -30,6 +31,41 @@ export async function getJenisLomba(kategori: string) {
     return await res.json();
 
 }
+export async function getKegiatan(id: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_LOMBA_API}?action=getKegiatan&id=${encodeURIComponent(id)}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Gagal mengambil kegiatan");
+  }
+
+  const json = await res.json();
+
+  return json.data;
+}
+
+export async function getListKegiatan() {
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_LOMBA_API}?action=listKegiatan`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Gagal mengambil kegiatan");
+  }
+
+  const json = await res.json();
+
+  return json.data ?? [];
+}
+
 
 export async function getListPeserta() {
 
@@ -50,6 +86,8 @@ export async function getListPeserta() {
   return JSON.parse(text);
 
 }
+
+
 
 export async function updatePeserta(data: any) {
   const res = await fetch("/api/lomba?action=update", {

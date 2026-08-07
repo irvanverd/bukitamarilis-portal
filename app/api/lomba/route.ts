@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
 
-  const kategori = searchParams.get("kategori");
+const kategori = searchParams.get("kategori");
 const q = searchParams.get("q");
 const action = searchParams.get("action");
 

@@ -25,6 +25,7 @@ interface Props {
 export default function CommentSection({
   kegiatanId,
 }: Props) {
+
   const [comments, setComments] = useState<Comment[]>([]);
   const [nama, setNama] = useState("");
   const [komentar, setKomentar] = useState("");
@@ -47,15 +48,21 @@ export default function CommentSection({
         }
       );
 
-      const data = await res.json();
+      const json = await res.json();
 
-      const sorted = data.sort(
-        (a: Comment, b: Comment) =>
-          new Date(b.TANGGAL).getTime() -
-          new Date(a.TANGGAL).getTime()
-      );
+if (!json.success) {
+  setComments([]);
+  return;
+}
 
-      setComments(sorted);
+const comments: Comment[] = json.data ?? [];
+    const sorted = comments.sort(
+      (a, b) =>
+        new Date(b.TANGGAL).getTime() -
+        new Date(a.TANGGAL).getTime()
+    );
+
+    setComments(sorted);
 
       if (sorted.length > 0) {
         setOpen(false);
@@ -76,57 +83,44 @@ export default function CommentSection({
       alert("Silakan isi komentar.");
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
-
-      await fetch("/api/comments", {
-
+  
+      const res = await fetch("/api/comments", {
         method: "POST",
-
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
-
           kegiatanId,
-
-          nama:
-            nama.trim() || "Warga",
-
+          nama: nama.trim() || "Warga",
           komentar,
-
         }),
-
       });
-
-      setNama("");
-
+  
+      const result = await res.json();
+  
+      if (!result.success) {
+        alert(result.message || "Gagal mengirim komentar.");
+        return;
+      }
+  
       setKomentar("");
-
+  
       await loadComment();
-
-      setOpen(true);
-
-      setSuccess(true);
-
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-
+  
     } catch (err) {
-
+  
       console.error(err);
-
-      alert("Gagal mengirim komentar.");
-
+      alert("Terjadi kesalahan saat mengirim komentar.");
+  
+    } finally {
+  
+      setLoading(false);
+  
     }
-
-    setLoading(false);
-
   }
 
   function formatTanggal(

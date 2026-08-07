@@ -1,5 +1,5 @@
 import Link from "next/link";
-import CommentSection from "@/components/CommentSection";
+import { getListKegiatan } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +16,7 @@ interface Kegiatan {
 }
 
 export default async function HalamanKegiatan() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SHEETDB_URL}?sheet=kegiatan`,
-    {
-      cache: "no-store",
-    }
-  );
-
-  const data: Kegiatan[] = res.ok ? await res.json() : [];
-
+  const data: Kegiatan[] = await getListKegiatan();
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 px-4 md:px-6">
 

@@ -77,4 +77,9 @@ export const metadata: Metadata = {
     description: "Portal resmi RT 07 RW 14 Bukit Amarilis",
     images: ["https://i.ibb.co.com/F4x5fHKJ/Logo-Banner-Amarilis.png"],
   },
+
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
