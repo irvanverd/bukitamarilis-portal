@@ -95,43 +95,38 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
+
   const { id } = await params;
 
   const kegiatan = await getKegiatan(id);
 
-  if (!kegiatan) {
-    return {
-      title: "Kegiatan tidak ditemukan",
-    };
-  }
-
-  const image =
-    kegiatan.foto?.trim() || "https://www.myamarilis.id/images/og-default.jpg";
-
   return {
     title: kegiatan.nama,
-    description: kegiatan.deskripsi.substring(0, 160),
+
+    description: kegiatan.deskripsi.substring(0, 150),
 
     openGraph: {
+
       title: kegiatan.nama,
-      description: kegiatan.deskripsi.substring(0, 160),
+
+      description: kegiatan.deskripsi.substring(0, 150),
+
       url: `https://www.myamarilis.id/kegiatan/${id}`,
+
       type: "article",
+
       images: [
         {
-          url: image,
+          url: kegiatan.foto.split("|")[0].trim(),
           width: 1200,
           height: 630,
-          alt: kegiatan.nama,
         },
       ],
     },
 
     twitter: {
       card: "summary_large_image",
-      title: kegiatan.nama,
-      description: kegiatan.deskripsi.substring(0, 160),
-      images: [image],
+      images: [kegiatan.foto.split("|")[0].trim()],
     },
   };
 }
