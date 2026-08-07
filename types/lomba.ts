@@ -2,6 +2,7 @@ export interface JenisLomba {
     id: string;
     kategori: string;
     lomba: string;
+    status:string;
   }
   
   export interface PesertaForm {

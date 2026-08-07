@@ -328,23 +328,38 @@ return;
               {errors.lomba && (
     <p className="text-red-500 text-sm mt-2">
         {errors.lomba}
-    </p>
+    </p> 
 )}
-              {listLomba.map((item) => (
-                <label
-                  key={item.id}
-                  className="flex items-center gap-3 cursor-pointer rounded-lg border p-3 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                >
-                  
-                  <input
-                    type="checkbox"
-                    checked={selectedLomba.includes(item.lomba)}
-                    onChange={() => toggleLomba(item.lomba)}
-                  />
-                  
-                  <span>{item.lomba}</span>
-                </label>
-              ))}
+              {listLomba.map((item) => {
+
+const disabled = item.status === "TUTUP";
+
+return (
+  <label
+    key={item.lomba}
+    className={`flex items-center gap-2 ${
+      disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+    }`}
+  >
+    <input
+      type="checkbox"
+      disabled={disabled}
+      checked={selectedLomba.includes(item.lomba)}
+      onChange={() => !disabled && toggleLomba(item.lomba)}
+    />
+
+    <span>
+      {item.lomba}
+      {disabled && (
+        <span className="ml-2 text-red-500 text-xs">
+          (Pendaftaran Ditutup)
+        </span>
+      )}
+    </span>
+  </label>
+);
+
+})}
             </div>
           )}
         </div>
