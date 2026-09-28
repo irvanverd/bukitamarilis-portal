@@ -3,27 +3,26 @@ import { headers } from "next/headers";
 
 async function getKasSummary() {
   try {
-    const protocol =
-      process.env.NODE_ENV === "development" ? "http" : "https";
+    const API_URL = process.env.NEXT_APPSCRIPT_API;
 
-    const host = process.env.VERCEL_URL
-      ? process.env.VERCEL_URL
-      : "localhost:3001";
+    if (!API_URL) {
+      throw new Error("NEXT_APPSCRIPT_API belum dikonfigurasi");
+    }
 
-    const url = `${protocol}://${host}/api/finance?action=getFinanceData`;
+    const url = new URL(API_URL);
+    url.searchParams.set("action", "getFinanceData");
 
     console.log("GET KAS SUMMARY");
-    console.log("URL:", url);
+    console.log("URL:", url.toString());
 
-    const res = await fetch(url, {
+    const res = await fetch(url.toString(), {
       cache: "no-store",
     });
 
     const text = await res.text();
 
     console.log("STATUS:", res.status);
-    console.log("STATUS TEXT:", res.statusText);
-    console.log("RESPONSE BODY:", text);
+    console.log("RESPONSE:", text.substring(0, 1000));
 
     if (!res.ok) {
       throw new Error(
@@ -31,9 +30,19 @@ async function getKasSummary() {
       );
     }
 
-    const json = JSON.parse(text);
+    if (!text.trim()) {
+      throw new Error("Response Apps Script kosong");
+    }
 
-    console.log("FINANCE JSON:", json);
+    let json;
+
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(
+        `Response bukan JSON: ${text.substring(0, 500)}`
+      );
+    }
 
     if (!json?.success) {
       throw new Error(
@@ -44,8 +53,6 @@ async function getKasSummary() {
     const data = Array.isArray(json.data)
       ? json.data
       : [];
-
-    console.log("FINANCE DATA ARRAY:", data);
 
     const now = new Date();
 
@@ -70,7 +77,7 @@ async function getKasSummary() {
     const kasBulanIni = data.find(
       (item: any) =>
         Number(item.Tahun) === currentYear &&
-        String(item.bulan).toLowerCase() ===
+        String(item.bulan).trim().toLowerCase() ===
           currentMonth.toLowerCase()
     );
 
