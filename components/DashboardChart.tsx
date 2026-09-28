@@ -22,7 +22,7 @@ export default function DashboardChart({ data }: Props) {
   >("monotone");
 
   const formatThousand = (value: number) => {
-    return Number(value) / 1000;
+    return (Number(value) / 1000).toLocaleString("id-ID");
   };
 
   return (
@@ -47,6 +47,9 @@ export default function DashboardChart({ data }: Props) {
             <CartesianGrid strokeDasharray="3 3" />
 
             <XAxis
+              label={{
+                value: "2026",
+              }}
               dataKey="bulan"
               tick={{
                 fontSize: 12,
