@@ -7,7 +7,6 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 import ThemeSwitcher from "./ThemeSwitcher";
-
 const UNDER_CONSTRUCTION = true;
 
 const menus = [
@@ -35,6 +34,7 @@ const menus = [
 
 export default function Navbar() {
   const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
 
   return (
@@ -50,11 +50,13 @@ export default function Navbar() {
       "
     >
       <div className="mx-auto max-w-7xl px-4">
+
         <div className="flex h-14 items-center justify-between">
 
           {/* Logo */}
+
           <Link
-            href={UNDER_CONSTRUCTION ? "/daftar-lomba" : "/"}
+            href="/"
             className="
             text-base
             md:text-lg
@@ -62,53 +64,82 @@ export default function Navbar() {
             text-[var(--primary)]
             "
           >
-            MyAmarilis
+           MyAmarilis
           </Link>
 
           {/* Desktop Menu */}
-          <nav className="hidden lg:flex items-center gap-5 text-sm">
-            {menus.map((menu) => {
-              const active =
-                !UNDER_CONSTRUCTION && pathname === menu.href;
+          
+<nav className="hidden lg:flex items-center gap-5 text-sm">
+  {menus.map((menu) => {
+    const active = pathname === menu.href;
 
-              return (
-                <Link
-                  key={menu.href}
-                  href={UNDER_CONSTRUCTION ? "/daftar-lomba" : menu.href}
-                  className={`
-                    transition
-                    hover:text-[var(--primary)]
-                    ${
-                      active
-                        ? "font-semibold text-[var(--primary)]"
-                        : "text-foreground"
-                    }
-                  `}
-                >
-                  {menu.name}
-                </Link>
-              );
-            })}
-          </nav>
+    if (UNDER_CONSTRUCTION) {
+      return (
+        <span
+          key={menu.href}
+          className="
+            text-gray-400
+            cursor-not-allowed
+            opacity-50
+            select-none
+          "
+          title="Website Under Construction"
+        >
+          {menu.name}
+        </span>
+      );
+    }
 
+    return (
+      <Link
+        key={menu.href}
+        href={menu.href}
+        className={`
+          transition
+          hover:text-[var(--primary)]
+          ${
+            active
+              ? "font-semibold text-[var(--primary)]"
+              : "text-foreground"
+          }
+        `}
+      >
+        {menu.name}
+      </Link>
+    );
+  })}
+</nav>
+          
           {/* Right */}
+
           <div className="hidden lg:flex items-center gap-3">
+
             <ThemeSwitcher />
+
+
           </div>
 
-          {/* Mobile Button */}
+          {/* Mobile */}
+
           <button
             onClick={() => setOpen(!open)}
             className="lg:hidden"
           >
-            {open ? <X size={22} /> : <Menu size={22} />}
+            {open ? (
+              <X size={22} />
+            ) : (
+              <Menu size={22} />
+            )}
           </button>
 
         </div>
+
       </div>
 
       {/* Mobile Menu */}
+
       {open && (
+
         <div
           className="
           lg:hidden
@@ -117,27 +148,47 @@ export default function Navbar() {
           border-border
           "
         >
+
           <div className="flex flex-col">
 
             {menus.map((menu) => {
+
               const active =
-                !UNDER_CONSTRUCTION && pathname === menu.href;
+                pathname === menu.href;
+
+                if (UNDER_CONSTRUCTION) {
+                  return (
+                    <span
+                      key={menu.href}
+                      className="
+                        text-gray-400
+                        cursor-not-allowed
+                        opacity-50
+                        select-none
+                      "
+                      title="Website Under Construction"
+                    >
+                      {menu.name}
+                    </span>
+                  );
+                }
 
               return (
                 <Link
                   key={menu.href}
-                  href={UNDER_CONSTRUCTION ? "/daftar-lomba" : menu.href}
+                  href={menu.href}
                   onClick={() => setOpen(false)}
                   className={`
-                    px-5
-                    py-3
-                    text-sm
-                    transition
-                    ${
-                      active
-                        ? "bg-[var(--primary)] text-white"
-                        : "hover:bg-muted"
-                    }
+                  px-5
+                  py-3
+                  text-sm
+                  transition
+
+                  ${
+                    active
+                      ? "bg-[var(--primary)] text-white"
+                      : "hover:bg-muted"
+                  }
                   `}
                 >
                   {menu.name}
@@ -146,12 +197,19 @@ export default function Navbar() {
             })}
 
             <div className="border-t p-4 space-y-3">
+
               <ThemeSwitcher />
+
+            
+
             </div>
 
           </div>
+
         </div>
+
       )}
+
     </header>
   );
 }

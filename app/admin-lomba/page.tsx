@@ -42,19 +42,6 @@ export default function Login() {
 
   }
 
-  async function logout() {
-
-    setLoading(true);
-
-    const res = await fetch("/api/logout", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

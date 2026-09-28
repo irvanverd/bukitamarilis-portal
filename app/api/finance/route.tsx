@@ -1,17 +1,117 @@
-import { NextResponse } from "next/server";
-import { getFinanceData } from "@/lib/googleSheet";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+const API_URL = process.env.NEXT_PUBLIC_API;
+
+export async function GET(req: NextRequest) {
+
+  if (!API_URL) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "NEXT_PUBLIC_LOMBA_API belum dikonfigurasi",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+
+  const { searchParams } = new URL(req.url);
+
+  const action = searchParams.get("action");
+  if (
+    action !== "getFinanceData" &&
+    action !== "getFinanceDetail" &&
+    action !== "getFinanceSummary"
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Action tidak valid",
+      },
+      { status: 400 }
+    );
+  }
+
   try {
-    const data = await getFinanceData();
 
-    return NextResponse.json(data);
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+
+    const url =
+      `${API_URL}?action=${action}`;
+
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Apps Script HTTP ${res.status}`,
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    if (!text.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Apps Script tidak mengirim response",
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    try {
+
+      const data = JSON.parse(text);
+
+      return NextResponse.json(data);
+
+    } catch {
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Response Apps Script bukan JSON",
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
   } catch (error) {
-    console.error(error);
+
+    console.error(
+      "Finance API Error:",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Failed to load finance data" },
-      { status: 500 }
+      {
+        success: false,
+        message:
+          "Tidak dapat terhubung ke server data.",
+      },
+      {
+        status: 504,
+      }
     );
   }
 }

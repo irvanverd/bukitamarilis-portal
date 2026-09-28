@@ -11,22 +11,39 @@ interface Pengurus {
 }
 
 async function getPengurusData(): Promise<Pengurus[]> {
-  const SHEETDB_URL = process.env.NEXT_PUBLIC_SHEETDB_URL;
-  
-  if (!SHEETDB_URL) {
-    console.error("SHEETDB URL belum dikonfigurasi.");
+  const API_URL = process.env.NEXT_PUBLIC_API;
+
+  if (!API_URL) {
+    console.error("NEXT_PUBLIC_API belum dikonfigurasi.");
     return [];
   }
 
   try {
-    const res = await fetch(`${SHEETDB_URL}?sheet=pengurus`, {
-      cache: 'no-store' // bypass cache agar real-time
+    const url = new URL(API_URL);
+    url.searchParams.set("action", "getPengurus");
+
+    const res = await fetch(url.toString(), {
+      cache: "no-store",
     });
 
-    if (!res.ok) throw new Error('Gagal fetch data');
-    return await res.json();
+    if (!res.ok) {
+      throw new Error(`Gagal fetch data: ${res.status}`);
+    }
+
+    const json = await res.json();
+
+    if (!json?.success) {
+      throw new Error(
+        json?.message || "Gagal mengambil data pengurus"
+      );
+    }
+
+    return Array.isArray(json.data)
+      ? json.data
+      : [];
+
   } catch (error) {
-    console.error(error);
+    console.error("Gagal mengambil data pengurus:", error);
     return [];
   }
 }
@@ -55,9 +72,6 @@ export default async function HalamanPengurus() {
           <h1 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">
             Struktur Organisasi & Pengurus
           </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-slate-500 text-sm sm:text-base">
-            Mengenal lebih dekat jajaran pengurus yang berdedikasi tinggi.
-          </p>
         </div>
 
         {/* Grid Struktur Kartu Pengurus */}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_LOMBA_API!;
+const API_URL = process.env.NEXT_PUBLIC_API!;
 
 export async function GET(req: NextRequest) {
 

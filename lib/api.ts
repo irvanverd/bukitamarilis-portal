@@ -33,7 +33,7 @@ export async function getJenisLomba(kategori: string) {
 }
 export async function getKegiatan(id: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_LOMBA_API}?action=getKegiatan&id=${encodeURIComponent(id)}`,
+    `${process.env.NEXT_PUBLIC_API}?action=getKegiatan&id=${encodeURIComponent(id)}`,
     {
       cache: "no-store",
     }
@@ -51,7 +51,7 @@ export async function getKegiatan(id: string) {
 export async function getListKegiatan() {
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_LOMBA_API}?action=listKegiatan`,
+    `${process.env.NEXT_PUBLIC_API}?action=listKegiatan`,
     {
       cache: "no-store",
     }
@@ -64,6 +64,59 @@ export async function getListKegiatan() {
   const json = await res.json();
 
   return json.data ?? [];
+}
+
+export async function getFinanceData() {
+  const API_URL = process.env.NEXT_PUBLIC_API;
+
+  if (!API_URL) {
+    console.error("NEXT_PUBLIC_API belum diset");
+    return [];
+  }
+
+  try {
+    const res = await fetch(
+      `${API_URL}?action=getFinanceData`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!res.ok) {
+      console.error(
+        "Gagal mengambil data keuangan:",
+        res.status,
+        res.statusText
+      );
+
+      return [];
+    }
+
+    const json = await res.json();
+
+    console.log("FINANCE DATA =", json);
+
+    if (!json?.success) {
+      console.error(
+        "Apps Script Finance Error:",
+        json?.message
+      );
+
+      return [];
+    }
+
+    return Array.isArray(json.data)
+      ? json.data
+      : [];
+
+  } catch (error) {
+    console.error(
+      "Gagal koneksi ke Apps Script Finance:",
+      error
+    );
+
+    return [];
+  }
 }
 
 

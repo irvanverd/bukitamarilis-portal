@@ -12,7 +12,6 @@ import {
   Legend,
 } from "recharts";
 
-
 interface Props {
   data: any[];
 }
@@ -21,6 +20,10 @@ export default function DashboardChart({ data }: Props) {
   const [lineType, setLineType] = useState<
     "monotone" | "linear" | "step" | "stepBefore" | "stepAfter"
   >("monotone");
+
+  const formatThousand = (value: number) => {
+    return Number(value) / 1000;
+  };
 
   return (
     <div className="w-full">
@@ -44,29 +47,46 @@ export default function DashboardChart({ data }: Props) {
             <CartesianGrid strokeDasharray="3 3" />
 
             <XAxis
-    dataKey="bulan"
-    tick={{
-        fontSize:12
-    }}
-/>
+              dataKey="bulan"
+              tick={{
+                fontSize: 12,
+              }}
+            />
 
-<YAxis
-    tick={{
-        fontSize:12
-    }}
-/>
+            <YAxis
+              tick={{
+                fontSize: 12,
+              }}
+              tickFormatter={formatThousand}
+              label={{
+                value: "Ribu",
+                angle: -90,
+                position: "insideLeft",
+                style: {
+                  fontSize: 12,
+                },
+              }}
+            />
 
-            <Tooltip />
+            <Tooltip
+              formatter={(value: any) => {
+                return [
+                  `${(Number(value) / 1000).toLocaleString("id-ID")}`,
+                  "",
+                ];
+              }}
+            />
 
             <Legend
-    wrapperStyle={{
-        fontSize:13
-    }}
-/>
+              wrapperStyle={{
+                fontSize: 13,
+              }}
+            />
 
             <Line
               type={lineType}
               dataKey="pemasukan"
+              name="Pemasukan"
               stroke="#22c55e"
               strokeWidth={3}
             />
@@ -74,14 +94,16 @@ export default function DashboardChart({ data }: Props) {
             <Line
               type={lineType}
               dataKey="pengeluaran"
+              name="Pengeluaran"
               stroke="#ef4444"
               strokeWidth={3}
             />
 
-          <Line
+            <Line
               type={lineType}
               dataKey="saldo"
-              stroke="#22c55e"
+              name="Saldo"
+              stroke="#3b82f6"
               strokeWidth={3}
             />
           </LineChart>
