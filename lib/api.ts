@@ -33,7 +33,7 @@ export async function getJenisLomba(kategori: string) {
 }
 export async function getKegiatan(id: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API}?action=getKegiatan&id=${encodeURIComponent(id)}`,
+    `${process.env.NEXT_APPSCRIPT_API}?action=getKegiatan&id=${encodeURIComponent(id)}`,
     {
       cache: "no-store",
     }
@@ -51,7 +51,7 @@ export async function getKegiatan(id: string) {
 export async function getListKegiatan() {
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API}?action=listKegiatan`,
+    `${process.env.NEXT_APPSCRIPT_API}?action=listKegiatan`,
     {
       cache: "no-store",
     }
@@ -67,56 +67,31 @@ export async function getListKegiatan() {
 }
 
 export async function getFinanceData() {
-  const API_URL = process.env.NEXT_PUBLIC_API;
+  const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 
-  if (!API_URL) {
-    console.error("NEXT_PUBLIC_API belum diset");
-    return [];
-  }
+  const url =
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
-  try {
-    const res = await fetch(
-      `${API_URL}?action=getFinanceData`,
-      {
-        cache: "no-store",
-      }
-    );
+  const response = await fetch(url, {
+    cache: "no-store",
+  });
 
-    if (!res.ok) {
-      console.error(
-        "Gagal mengambil data keuangan:",
-        res.status,
-        res.statusText
-      );
+  const text = await response.text();
 
-      return [];
-    }
+  const json = JSON.parse(
+    text.substring(47).slice(0, -2)
+  );
 
-    const json = await res.json();
+  const rows = json.table.rows;
 
-    console.log("FINANCE DATA =", json);
+  return rows.map((row: any) => ({
+    Tahun: row.c[0]?.v ?? "",
+    bulan: row.c[1]?.v ?? "",
+    pemasukan: Number(row.c[2]?.v ?? 0),
+    pengeluaran: Number(row.c[3]?.v ?? 0),
+    saldo: Number(row.c[4]?.v ?? 0),
 
-    if (!json?.success) {
-      console.error(
-        "Apps Script Finance Error:",
-        json?.message
-      );
-
-      return [];
-    }
-
-    return Array.isArray(json.data)
-      ? json.data
-      : [];
-
-  } catch (error) {
-    console.error(
-      "Gagal koneksi ke Apps Script Finance:",
-      error
-    );
-
-    return [];
-  }
+  }));
 }
 
 

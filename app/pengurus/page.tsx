@@ -11,10 +11,10 @@ interface Pengurus {
 }
 
 async function getPengurusData(): Promise<Pengurus[]> {
-  const API_URL = process.env.NEXT_PUBLIC_API;
+  const API_URL = process.env.NEXT_APPSCRIPT_API;
 
   if (!API_URL) {
-    console.error("NEXT_PUBLIC_API belum dikonfigurasi.");
+    console.error("NEXT_APPSCRIPT_API belum dikonfigurasi.");
     return [];
   }
 
