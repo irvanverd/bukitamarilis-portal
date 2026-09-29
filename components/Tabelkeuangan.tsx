@@ -13,6 +13,7 @@ import {
 
 interface KeuanganDetail {
   header: string;
+  group:string;
   account: string;
   keterangan: string;
 
@@ -35,14 +36,16 @@ interface KeuanganDetail {
 interface IplSummary {
   tahun: string | number;
   bulan: string;
-  total: string | number;
+  pemasukan: string | number;
+  pengeluaran: string | number;
 }
 
 interface ChartIplData {
   label: string;
   bulan: string;
   tahun: string | number;
-  total: number;
+  pemasukan: number;
+  pengeluaran: number;
 }
 
 export default function TransparansiTables() {
@@ -142,8 +145,8 @@ export default function TransparansiTables() {
         );
 
         setDataIpl(
-          Array.isArray(dashboard.summary)
-            ? dashboard.summary
+          Array.isArray(dashboard.kas)
+            ? dashboard.kas
             : []
         );
       } catch (err) {
@@ -255,10 +258,11 @@ export default function TransparansiTables() {
       );
 
       return {
-        label: `${bulanInfo?.short || item.bulan} ${item.tahun}`,
+        label: `${bulanInfo?.short}`,
         bulan: item.bulan,
         tahun: item.tahun,
-        total: Number(item.total) || 0,
+        pemasukan: Number(item.pemasukan) || 0,
+        pengeluaran: Number(item.pengeluaran) || 0,
       };
     });
   }, [dataIpl]);
@@ -316,7 +320,7 @@ export default function TransparansiTables() {
             }
           `}
         >
-          📊 Rekap Pemasukan IPL
+          📊 Chart
         </button>
       </div>
 
@@ -513,6 +517,7 @@ export default function TransparansiTables() {
                       <tr className="bg-slate-100 border-b border-slate-200">
                         <th
                           className="
+                          
                             px-2
                             py-3
                             text-[10px]
@@ -548,7 +553,7 @@ export default function TransparansiTables() {
                               text-slate-600
                               text-center
                               bg-slate-50
-                              w-[18%]
+                              w-[28%]
                             "
                           >
                             {bulan.short.toUpperCase()}
@@ -866,12 +871,9 @@ export default function TransparansiTables() {
               "
             >
               <div className="mb-4">
-                <h3 className="text-base sm:text-lg font-bold text-slate-700">
-                  📊 Rekap Pemasukan IPL
-                </h3>
-
+               
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Grafik pemasukan IPL berdasarkan bulan.
+                  Grafik pemasukan vs pengeluaran berdasarkan bulan.
                 </p>
               </div>
 
@@ -886,7 +888,7 @@ export default function TransparansiTables() {
                     text-slate-400
                   "
                 >
-                  Belum ada data pemasukan IPL.
+                  Belum ada data.
                 </div>
               ) : (
                 <div className="w-full h-[300px] sm:h-[360px]">
@@ -938,12 +940,12 @@ export default function TransparansiTables() {
                         tickFormatter={formatChartAxis}
                         width={45}
                       />
-
-                      <Tooltip
-                        formatter={(value: any) => [
-                          `Rp ${formatRupiah(value)}`,
-                          "Pemasukan IPL",
-                        ]}
+                    <Tooltip
+                      formatter={(value: any, name: any) => [
+                        `Rp ${formatRupiah(value)}`,
+                        name === "Pemasukan" ? "Pemasukan" : "Pengeluaran"
+                      ]}
+                        
                         labelFormatter={(label) =>
                           `Bulan: ${label}`
                         }
@@ -953,11 +955,26 @@ export default function TransparansiTables() {
                           fontSize: "12px",
                         }}
                       />
+                     
 
                       <Bar
-                        dataKey="total"
-                        name="Pemasukan IPL"
+                        dataKey="pemasukan"
+                        name="Pemasukan"
                         fill="#3b82f6"
+                        radius={[
+                          6,
+                          6,
+                          0,
+                          0,
+                        ]}
+                        maxBarSize={55}
+                      />
+                      
+                        
+                      <Bar
+                        dataKey="pengeluaran"
+                        name="Pengeluaran"
+                        fill="#ef4444"
                         radius={[
                           6,
                           6,
@@ -1019,11 +1036,27 @@ export default function TransparansiTables() {
                       {formatRupiah(
                         chartIplData.reduce(
                           (total, item) =>
-                            total + item.total,
+                            total + item.pemasukan,
                           0
                         )
                       )}
                     </div>
+
+                    <div className="text-[11px] text-slate-500">
+                      Total Pengeluaran
+                    </div>
+
+                    <div className="text-lg font-bold text-red-700">
+                      Rp{" "}
+                      {formatRupiah(
+                        chartIplData.reduce(
+                          (total, item) =>
+                            total + item.pengeluaran,
+                          0
+                        )
+                      )}
+                    </div>    
+
                   </div>
                 </div>
               )}
