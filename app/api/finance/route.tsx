@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "NEXT_PUBLIC_LOMBA_API belum dikonfigurasi",
+        message: "NEXT_APPSCRIPT_API belum dikonfigurasi",
       },
       {
         status: 500,
