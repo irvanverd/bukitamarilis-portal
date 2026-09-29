@@ -36,9 +36,6 @@ async function getData() {
     );
 
     const text = await res.text();
-    console.warn(
-      `Response: ${text} `
-    );
 
     if (!res.ok) {
       throw new Error(

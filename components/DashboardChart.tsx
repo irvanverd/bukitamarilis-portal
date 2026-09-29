@@ -41,7 +41,7 @@ export default function DashboardChart({ data }: Props) {
       saldo: Number(item?.saldo ?? 0),
     }));
 
-    console.log("DashboardChart DATA =", result);
+    //console.log("DashboardChart DATA =", result);
 
     return result;
   }, [data]);
