@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
   const action = searchParams.get("action");
   if (
     action !== "getFinanceData" &&
+    action !== "getFinanceDashboard" &&
     action !== "getFinanceDetail" &&
     action !== "getFinanceSummary"
   ) {

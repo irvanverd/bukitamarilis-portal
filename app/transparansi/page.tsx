@@ -3,35 +3,88 @@ import TransparansiTables from "@/components/Tabelkeuangan"; // Impor komponen t
 import { headers } from "next/headers";
 
 async function getData() {
-  // 1. Ambil data host (domain) secara dinamis dari request headers
-  const headersList = await headers();
-  const host = headersList.get("host") || "localhost:3001";
-  
-  // 2. Tentukan protokol (http untuk lokal, https untuk Vercel)
-  const protocol = host.includes("localhost") ? "http" : "https";
-  
-  // 3. Gabungkan menjadi URL Absolut yang valid
-  const absoluteUrl = `${protocol}://${host}/api/finance?action=getFinanceData`;
-  const res = await fetch(
-    absoluteUrl,
-    { cache: "no-store" }
-  );
+  const API_URL =
+    process.env.NEXT_APPSCRIPT_API;
 
-  if (!res.ok) {
-    throw new Error(`Gagal mengambil data: ${res.statusText}`);
-  }
-
-  const json = await res.json();
-
-  if (!json?.success) {
+  if (!API_URL) {
     throw new Error(
-      json?.message || "Gagal mengambil data keuangan"
+      "NEXT_APPSCIRPT_API belum dikonfigurasi"
     );
   }
 
-  return Array.isArray(json.data)
-    ? json.data
-    : [];
+  const url = new URL(API_URL);
+
+  url.searchParams.set(
+    "action",
+    "getFinanceDashboard"
+  );
+
+  const controller =
+    new AbortController();
+
+  const timeout = setTimeout(
+    () => controller.abort(),
+    50000
+  );
+
+  try {
+
+    const res = await fetch(
+      url.toString(),
+      {
+        signal: controller.signal
+      }
+    );
+
+    const text = await res.text();
+  
+
+    if (!res.ok) {
+      throw new Error(
+        `Gagal mengambil data: HTTP ${res.status} ${res.statusText}`
+      );
+    }
+
+    if (!text.trim()) {
+      throw new Error(
+        "Apps Script mengembalikan response kosong"
+      );
+    }
+
+    let json;
+
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(
+        `Response Apps Script bukan JSON: ${text.substring(0, 300)}`
+      );
+    }
+
+    if (!json?.success) {
+      throw new Error(
+        json?.message ||
+        "Gagal mengambil data keuangan"
+      );
+    }
+
+    return json.data;
+
+  } catch (error: any) {
+
+    if (error?.name === "AbortError") {
+      throw new Error(
+        "Timeout menghubungi Apps Script"
+      );
+    }
+
+    throw error;
+
+  } finally {
+
+    clearTimeout(timeout);
+
+  }
 }
 
 export default async function TransparansiPage() {
@@ -46,7 +99,7 @@ export default async function TransparansiPage() {
         
         {/* 1. BAGIAN GRAFIK LAMA */}
         <div className="bg-white p-4 rounded-2xl border shadow-sm">
-          <DashboardChart data={data} />
+          <DashboardChart data={data.kas} />
         </div>
         <TransparansiTables/>
         {/* 2. BAGIAN 2 TAB TABEL BARU */}

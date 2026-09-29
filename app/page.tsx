@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { headers } from "next/headers";
+
 
 async function getKasSummary() {
   try {
@@ -12,17 +12,11 @@ async function getKasSummary() {
     const url = new URL(API_URL);
     url.searchParams.set("action", "getFinanceData");
 
-    console.log("GET KAS SUMMARY");
-    console.log("URL:", url.toString());
-
     const res = await fetch(url.toString(), {
       cache: "no-store",
     });
 
     const text = await res.text();
-
-    console.log("STATUS:", res.status);
-    console.log("RESPONSE:", text.substring(0, 1000));
 
     if (!res.ok) {
       throw new Error(
@@ -40,7 +34,7 @@ async function getKasSummary() {
       json = JSON.parse(text);
     } catch {
       throw new Error(
-        `Response bukan JSON: ${text.substring(0, 500)}`
+        `Response Apps Script bukan JSON: ${text.substring(0, 500)}`
       );
     }
 
@@ -50,11 +44,23 @@ async function getKasSummary() {
       );
     }
 
-    const data = Array.isArray(json.data)
-      ? json.data
-      : [];
+    // ============================================
+    // getFinanceDashboard:
+    // json.data.kas
+    // ============================================
+    const data = json?.data;
+    const lastupdatetime = json?.timestamp;
 
-    const now = new Date();
+    if (!Array.isArray(data)) {
+      console.error(
+        "Format data kas tidak valid:",
+        json?.data
+      );
+
+      throw new Error(
+        "Data kas dari Apps Script tidak berupa array"
+      );
+    }
 
     const bulanIndonesia = [
       "Januari",
@@ -71,19 +77,31 @@ async function getKasSummary() {
       "Desember",
     ];
 
+    const now = new Date();
+
     const currentYear = now.getFullYear();
-    const currentMonth = bulanIndonesia[now.getMonth()];
 
-    const kasBulanIni = data.find(
-      (item: any) =>
-        Number(item.Tahun) === currentYear &&
-        String(item.bulan).trim().toLowerCase() ===
-          currentMonth.toLowerCase()
-    );
+    const currentMonth =
+      bulanIndonesia[now.getMonth()];
 
-    console.log("KAS BULAN INI:", kasBulanIni);
+    const kasBulanIni = data.find((item: any) => {
+      const tahun = Number(item.Tahun);
+
+      const bulan = String(item.bulan ?? "")
+        .trim()
+        .toLowerCase();
+
+      return (
+        tahun === currentYear &&
+        bulan === currentMonth.toLowerCase()
+      );
+    });
 
     if (!kasBulanIni) {
+      console.warn(
+        `Data kas tidak ditemukan untuk ${currentMonth} ${currentYear}`
+      );
+
       return {
         pemasukan: 0,
         pengeluaran: 0,
@@ -95,9 +113,18 @@ async function getKasSummary() {
       pemasukan: Number(kasBulanIni.pemasukan) || 0,
       pengeluaran: Number(kasBulanIni.pengeluaran) || 0,
       saldo: Number(kasBulanIni.saldo) || 0,
+      lastupdatetime: lastupdatetime 
+    ? new Date(lastupdatetime).toLocaleString("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }) 
+    : "-",
     };
   } catch (error) {
-    console.error("Error pada getKasSummary:", error);
+    console.error(
+      "Error pada getKasSummary:",
+      error
+    );
 
     return {
       pemasukan: 0,
@@ -148,7 +175,7 @@ export default async function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold">Ringkasan Kas RT</h2>
-              <p className="text-slate-500 dark:text-slate-400">lastupdate 📆</p>
+              <p className="text-slate-500 dark:text-slate-400">Last Update : {kas.lastupdatetime}</p>
             </div>
 
             <Link href="/transparansi" className="text-green-600 font-medium">
