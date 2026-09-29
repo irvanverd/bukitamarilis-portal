@@ -131,7 +131,7 @@ export default function DashboardChart({ data }: Props) {
                   const number = Number(value);
 
                   return [
-                    `${(number / 1000).toLocaleString("id-ID")} Ribu`,
+                    `${(number / 1000).toLocaleString("id-ID")}`,
                     name,
                   ];
                 }}

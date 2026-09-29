@@ -1,6 +1,5 @@
 import DashboardChart from "@/components/DashboardChart";
 import TransparansiTables from "@/components/Tabelkeuangan"; // Impor komponen tabel baru
-import { headers } from "next/headers";
 
 async function getData() {
   const API_URL =
@@ -37,7 +36,9 @@ async function getData() {
     );
 
     const text = await res.text();
-  
+    console.warn(
+      `Response: ${text} `
+    );
 
     if (!res.ok) {
       throw new Error(
