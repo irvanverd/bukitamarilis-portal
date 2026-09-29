@@ -12,9 +12,7 @@ async function getKasSummary() {
     const url = new URL(API_URL);
     url.searchParams.set("action", "getFinanceData");
 
-    const res = await fetch(url.toString(), {
-      cache: "no-store",
-    });
+    const res = await fetch(url.toString());
 
     const text = await res.text();
 
