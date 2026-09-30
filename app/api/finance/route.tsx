@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     const timeout = setTimeout(() => {
       controller.abort();
-    }, 15000);
+    }, 20000);
 
     const url =
       `${API_URL}?action=${action}`;
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     console.error(
       "Finance API Error:",
-      error
+      
     );
 
     return NextResponse.json(

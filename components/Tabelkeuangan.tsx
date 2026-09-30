@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toPng } from "html-to-image";
 import {
   ResponsiveContainer,
   BarChart,
@@ -10,6 +11,13 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+
+import {
+  getClientCache,
+  saveClientCache,
+} from "@/lib/client-cache";
+
+import DashboardChart from "@/components/DashboardChart";
 
 interface KeuanganDetail {
   header: string;
@@ -55,8 +63,11 @@ export default function TransparansiTables() {
 
   const [dataKeuangan, setDataKeuangan] = useState<KeuanganDetail[]>([]);
   const [dataIpl, setDataIpl] = useState<IplSummary[]>([]);
+  const [dataKas, setDataKas] = useState<any[]>([]);
 
   const [selectedBulan, setSelectedBulan] = useState<string>("all");
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   // Posisi 3 bulan yang sedang ditampilkan di HP
   const [mobileStartMonth, setMobileStartMonth] = useState(0);
@@ -106,64 +117,204 @@ export default function TransparansiTables() {
   };
 
   // =========================================================
+  // EXPORT LPJ KE IMAGE
+  // =========================================================
+
+  const handleExportImage = async () => {
+    if (!exportRef.current || dataKeuangan.length === 0) {
+      return;
+    }
+  
+    try {
+      setExporting(true);
+  
+      const element = exportRef.current;
+  
+      // Tampilkan sementara
+      element.style.position = "fixed";
+      element.style.left = "0";
+      element.style.top = "0";
+      element.style.opacity = "1";
+      element.style.pointerEvents = "none";
+      element.style.zIndex = "99999";
+  
+      // Tunggu browser selesai render
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => resolve(null))
+      );
+  
+      await new Promise((resolve) =>
+        setTimeout(resolve, 300)
+      );
+  
+      const dataUrl = await toPng(element, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
+  
+      const link = document.createElement("a");
+  
+      const periode =
+        selectedBulan === "all"
+          ? "Januari-Desember 2026"
+          : selectedBulan;
+  
+      link.download = `LPJ-Keuangan-${periode}.png`;
+      link.href = dataUrl;
+      link.click();
+  
+      // Sembunyikan kembali
+      element.style.opacity = "0";
+      element.style.zIndex = "-1";
+  
+    } catch (error) {
+      console.error("Gagal export LPJ:", error);
+  
+      alert(
+        "Gagal membuat gambar LPJ. Silakan coba lagi."
+      );
+  
+    } finally {
+      setExporting(false);
+    }
+  };
+  // =========================================================
   // FETCH DATA
   // =========================================================
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      const CACHE_KEY = "finance-dashboard";
+  
+      // ==========================================
+      // 1. LOAD CACHE TERLEBIH DAHULU
+      // ==========================================
+  
+      const cached =
+        getClientCache<any>("finance-dashboard");
+  
+      if (cached?.data) {
+         const age =
+    Date.now() - cached.timestamp;
 
-      try {
-        // getFinanceDashboard mengembalikan semua data finance
-        // dalam satu response.
-        const res = await fetch(
-          "/api/finance?action=getFinanceDashboard",
-          {
-            cache: "no-store",
-          }
+  const ageMinutes =
+    Math.floor(age / 60000);
+        console.log(
+          `Finance: menggunakan localStorage,  ${ageMinutes} menit`,
+          new Date(cached.timestamp)
         );
-
-        const json = await res.json();
-
-        if (!res.ok || !json?.success) {
-          throw new Error(
-            json?.message || "Gagal mengambil data keuangan"
-          );
-        }
-
-        const dashboard = json?.data ?? {};
-
-        // Struktur terbaru getFinanceDashboard:
-        // data.detail  -> tabel LPJ
-        // data.summary -> grafik/rekap IPL
-        // data.kas     -> data kas/dashboard
-        // data.korwil  -> rekap IPL per Korwil
+  
+        const dashboard = cached.data;
+  
         setDataKeuangan(
           Array.isArray(dashboard.detail)
             ? dashboard.detail
             : []
         );
-
+  
         setDataIpl(
           Array.isArray(dashboard.kas)
             ? dashboard.kas
             : []
         );
-      } catch (err) {
-        console.error(
-          "Gagal mengambil data dashboard keuangan:",
-          err
+  
+        setDataKas(
+          Array.isArray(dashboard.kas)
+            ? dashboard.kas
+            : []
         );
-
-        setDataKeuangan([]);
-        setDataIpl([]);
+      }
+  
+      // ==========================================
+      // 2. REQUEST DATA TERBARU DI BACKGROUND
+      // ==========================================
+  
+      setLoading(!cached?.data);
+  
+      try {
+        const controller = new AbortController();
+  
+        const timeout = setTimeout(() => {
+          controller.abort();
+        }, 50000);
+  
+        const res = await fetch(
+          "/api/finance?action=getFinanceDashboard",
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          }
+        );
+  
+        clearTimeout(timeout);
+  
+        if (!res.ok) {
+          throw new Error(
+            `HTTP ${res.status} ${res.statusText}`
+          );
+        }
+  
+        const json = await res.json();
+  
+        if (!json?.success) {
+          throw new Error(
+            json?.message ||
+              "Gagal mengambil data finance"
+          );
+        }
+  
+        const dashboard = json?.data ?? {};
+  
+        // ==========================================
+        // 3. UPDATE STATE
+        // ==========================================
+  
+        setDataKeuangan(
+          Array.isArray(dashboard.detail)
+            ? dashboard.detail
+            : []
+        );
+  
+        setDataIpl(
+          Array.isArray(dashboard.kas)
+            ? dashboard.kas
+            : []
+        );
+  
+        setDataKas(
+          Array.isArray(dashboard.kas)
+            ? dashboard.kas
+            : []
+        );
+  
+        // ==========================================
+        // 4. SIMPAN RESPONSE KE LOCALSTORAGE
+        // ==========================================
+  
+        saveClientCache(
+          CACHE_KEY,
+          dashboard
+        );
+  
+        console.log(
+          "Finance: localStorage berhasil diperbarui"
+        );
+  
+      } catch (error) {
+        console.error(
+          "Finance: gagal mengambil data terbaru:",
+          error
+        );
+  
+        // Jangan kosongkan state!
+        // Data dari localStorage tetap ditampilkan.
+  
       } finally {
         setLoading(false);
       }
     };
-
-    // Dashboard cukup dipanggil sekali.
-    // Saat tab berpindah, data sudah tersedia di state.
+  
     fetchData();
   }, []);
 
@@ -277,6 +428,12 @@ export default function TransparansiTables() {
           TAB
       ===================================================== */}
 
+      {dataKas.length > 0 && (
+      <div className="bg-white p-4 rounded-2xl border shadow-sm mb-5">
+        <DashboardChart data={dataKas} />
+      </div>
+    )}
+
       <div className="flex border-b border-slate-200 mb-5 bg-white rounded-xl overflow-hidden shadow-sm">
         <button
           onClick={() => setActiveTab("detail")}
@@ -345,68 +502,357 @@ export default function TransparansiTables() {
           </div>
 
           <div
-            className="
-              flex
-              flex-col
-              sm:flex-row
-              sm:items-center
-              gap-2
-              w-full
-            "
-          >
-            <label
-              htmlFor="bulan-select"
-              className="
-                text-xs
-                text-slate-500
-                font-medium
-                sm:min-w-fit
-              "
-            >
-              Pilih Bulan:
-            </label>
+  className="
+    flex
+    flex-col
+    sm:flex-row
+    sm:items-center
+    gap-2
+    w-full
+  "
+>
+  <label
+    htmlFor="bulan-select"
+    className="
+      text-xs
+      text-slate-500
+      font-medium
+      sm:min-w-fit
+    "
+  >
+    Pilih Bulan:
+  </label>
 
-            <select
-              id="bulan-select"
-              value={selectedBulan}
-              onChange={(e) =>
-                setSelectedBulan(e.target.value)
-              }
-              className="
-                w-full
-                sm:flex-1
-                bg-slate-50
-                border
-                border-slate-300
-                text-slate-700
-                text-sm
-                font-medium
-                rounded-xl
-                py-2.5
-                px-3
-                outline-none
-                focus:border-blue-500
-                focus:ring-1
-                focus:ring-blue-500
-                min-w-0
-              "
-            >
-              <option value="all">
-                🗓️ Semua Bulan (Jan-Des)
-              </option>
+  <select
+    id="bulan-select"
+    value={selectedBulan}
+    onChange={(e) =>
+      setSelectedBulan(e.target.value)
+    }
+    className="
+      w-full
+      sm:flex-1
+      bg-slate-50
+      border
+      border-slate-300
+      text-slate-700
+      text-sm
+      font-medium
+      rounded-xl
+      py-2.5
+      px-3
+      outline-none
+      focus:border-blue-500
+      focus:ring-1
+      focus:ring-blue-500
+      min-w-0
+    "
+  >
+    <option value="all">
+      🗓️ Semua Bulan (Jan-Des)
+    </option>
 
-              {listPilihanBulan.map((bulan) => (
-                <option
-                  key={bulan.nama}
-                  value={bulan.nama}
-                >
-                  {bulan.nama}
-                </option>
-              ))}
-            </select>
-          </div>
+    {listPilihanBulan.map((bulan) => (
+      <option
+        key={bulan.nama}
+        value={bulan.nama}
+      >
+        {bulan.nama}
+      </option>
+    ))}
+  </select>
+
+  {/* EXPORT IMAGE */}
+  <button
+    type="button"
+    onClick={handleExportImage}
+    disabled={
+      exporting ||
+      dataKeuangan.length === 0
+    }
+    className="
+      w-full
+      sm:w-auto
+      shrink-0
+      inline-flex
+      items-center
+      justify-center
+      gap-2
+      px-4
+      py-2.5
+      rounded-xl
+      bg-blue-600
+      text-white
+      text-sm
+      font-semibold
+      shadow-sm
+      hover:bg-blue-700
+      active:scale-[0.98]
+      transition
+      disabled:opacity-50
+      disabled:cursor-not-allowed
+    "
+  >
+    {exporting ? (
+      <>
+        <span className="animate-spin">⏳</span>
+        Membuat...
+      </>
+    ) : (
+      <>
+        🖼️
+        Unduh LPJ
+      </>
+    )}
+  </button>
+</div>
+          
         </div>
       )}
+
+  {/* =====================================================
+    AREA EXPORT IMAGE
+===================================================== */}
+
+<div
+  ref={exportRef}
+  style={{
+    position: "fixed",
+    left: "0",
+    top: "0",
+    width:
+      selectedBulan === "all"
+        ? "1600px"
+        : "1100px",
+    padding: "40px",
+    backgroundColor: "#ffffff",
+    opacity: 0,
+    pointerEvents: "none",
+    zIndex: -1,
+  }}
+>
+  {/* HEADER */}
+  <div className="mb-6">
+    <div className="text-3xl font-bold text-slate-800">
+      LAPORAN PERTANGGUNGJAWABAN (LPJ)
+    </div>
+
+    <div className="text-xl font-semibold text-slate-600 mt-1">
+      Keuangan RT 07 RW 14 Bukit Amarilis
+    </div>
+
+    <div className="text-base text-slate-500 mt-3">
+      Periode:{" "}
+      <span className="font-semibold text-slate-700">
+        {selectedBulan === "all"
+          ? "Januari - Desember 2026 "
+          : selectedBulan}
+      </span>
+    </div>
+  </div>
+
+  {/* TABLE EXPORT */}
+  <table
+    className="
+      w-full
+      border-collapse
+      text-sm
+    "
+    style={{
+      tableLayout: "fixed",
+    }}
+  >
+    <thead>
+      <tr>
+        <th
+          className="
+            border
+            border-slate-300
+            bg-slate-100
+            px-4
+            py-3
+            text-left
+            font-bold
+            text-slate-700
+          "
+          style={{
+            width:
+              selectedBulan === "all"
+                ? "110px"
+                : "140px",
+          }}
+        >
+          Account
+        </th>
+
+        <th
+          className="
+            border
+            border-slate-300
+            bg-slate-100
+            px-4
+            py-3
+            text-left
+            font-bold
+            text-slate-700
+          "
+          style={{
+            width:
+              selectedBulan === "all"
+                ? "350px"
+                : "400px",
+          }}
+        >
+          Keterangan
+        </th>
+
+        {selectedBulan === "all" ? (
+          listPilihanBulan.map((bulan) => (
+            <th
+              key={bulan.nama}
+              className="
+                border
+                border-slate-300
+                bg-slate-100
+                px-3
+                py-3
+                text-center
+                font-bold
+                text-slate-700
+              "
+            >
+              {bulan.nama.toUpperCase()}
+            </th>
+          ))
+        ) : (
+          <th
+            className="
+              border
+              border-slate-300
+              bg-blue-50
+              px-3
+              py-3
+              text-center
+              font-bold
+              text-blue-800
+            "
+          >
+            {selectedBulan.toUpperCase()}
+          </th>
+        )}
+      </tr>
+    </thead>
+
+    <tbody>
+      {dataKeuangan.map((item, idx) => (
+        <tr key={idx}>
+          <td
+            className="
+              border
+              border-slate-300
+              px-4
+              py-3
+              align-top
+              text-slate-700
+            "
+          >
+            <span
+              className={
+                item.header?.toString() === "T"
+                  ? "font-bold"
+                  : ""
+              }
+            >
+              {item.account}
+            </span>
+          </td>
+
+          <td
+            className="
+              border
+              border-slate-300
+              px-4
+              py-3
+              align-top
+              text-slate-700
+            "
+          >
+            <span
+              className={
+                item.header?.toString() === "T"
+                  ? "font-bold"
+                  : ""
+              }
+            >
+              {item.keterangan}
+            </span>
+          </td>
+
+          {selectedBulan === "all" ? (
+            listPilihanBulan.map((bulan) => (
+              <td
+                key={bulan.nama}
+                className="
+                  border
+                  border-slate-300
+                  px-3
+                  py-3
+                  text-right
+                  align-top
+                  whitespace-nowrap
+                  text-slate-700
+                "
+              >
+                <span
+                  className={
+                    item.header?.toString() === "T"
+                      ? "font-bold"
+                      : ""
+                  }
+                >
+                  {formatRupiah(
+                    item[bulan.nama]
+                  )}
+                </span>
+              </td>
+            ))
+          ) : (
+            <td
+              className="
+                border
+                border-slate-300
+                px-3
+                py-3
+                text-right
+                align-top
+                whitespace-nowrap
+                text-slate-700
+                bg-blue-50/30
+              "
+            >
+              <span
+                className={
+                  item.header?.toString() === "T"
+                    ? "font-bold"
+                    : ""
+                }
+              >
+                {formatRupiah(
+                  item[selectedBulan]
+                )}
+              </span>
+            </td>
+          )}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  {/* FOOTER */}
+  <div className="mt-6 text-sm text-slate-400">
+    Portal Warga RT 07 RW 14 Bukit Amarilis
+  </div>
+</div>
 
       {/* =====================================================
           LOADING

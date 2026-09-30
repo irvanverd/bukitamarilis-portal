@@ -1,142 +1,10 @@
 import Link from "next/link";
 
+import KasSummary from "@/components/KasSummary";
 
-async function getKasSummary() {
-  try {
-    const API_URL = process.env.NEXT_APPSCRIPT_API;
-
-    if (!API_URL) {
-      throw new Error("NEXT_APPSCRIPT_API belum dikonfigurasi");
-    }
-
-    const url = new URL(API_URL);
-    url.searchParams.set("action", "getFinanceData");
-
-    const res = await fetch(url.toString());
-
-    const text = await res.text();
-
-    if (!res.ok) {
-      throw new Error(
-        `Gagal mengambil data. HTTP ${res.status}: ${text}`
-      );
-    }
-
-    if (!text.trim()) {
-      throw new Error("Response Apps Script kosong");
-    }
-
-    let json;
-
-    try {
-      json = JSON.parse(text);
-    } catch {
-      throw new Error(
-        `Response Apps Script bukan JSON: ${text.substring(0, 500)}`
-      );
-    }
-
-    if (!json?.success) {
-      throw new Error(
-        json?.message || "Gagal mengambil data keuangan"
-      );
-    }
-
-    // ============================================
-    // getFinanceDashboard:
-    // json.data.kas
-    // ============================================
-    const data = json?.data;
-    const lastupdatetime = json?.timestamp;
-
-    if (!Array.isArray(data)) {
-      console.error(
-        "Format data kas tidak valid:",
-        json?.data
-      );
-
-      throw new Error(
-        "Data kas dari Apps Script tidak berupa array"
-      );
-    }
-
-    const bulanIndonesia = [
-      "Januari",
-      "Februari",
-      "Maret",
-      "April",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agustus",
-      "September",
-      "Oktober",
-      "November",
-      "Desember",
-    ];
-
-    const now = new Date();
-
-    const currentYear = now.getFullYear();
-
-    const currentMonth =
-      bulanIndonesia[now.getMonth()];
-
-    const kasBulanIni = data.find((item: any) => {
-      const tahun = Number(item.Tahun);
-
-      const bulan = String(item.bulan ?? "")
-        .trim()
-        .toLowerCase();
-
-      return (
-        tahun === currentYear &&
-        bulan === currentMonth.toLowerCase()
-      );
-    });
-
-    if (!kasBulanIni) {
-      console.warn(
-        `Data kas tidak ditemukan untuk ${currentMonth} ${currentYear}`
-      );
-
-      return {
-        pemasukan: 0,
-        pengeluaran: 0,
-        saldo: 0,
-      };
-    }
-
-    return {
-      pemasukan: Number(kasBulanIni.pemasukan) || 0,
-      pengeluaran: Number(kasBulanIni.pengeluaran) || 0,
-      saldo: Number(kasBulanIni.saldo) || 0,
-      lastupdatetime: lastupdatetime 
-    ? new Date(lastupdatetime).toLocaleString("id-ID", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }) 
-    : "-",
-    };
-  } catch (error) {
-    console.error(
-      "Error pada getKasSummary:",
-      error
-    );
-
-    return {
-      pemasukan: 0,
-      pengeluaran: 0,
-      saldo: 0,
-    };
-  }
-}
-
-export const dynamic = "force-dynamic";
-export default async function HomePage() {
-  const kas = await getKasSummary();
-
+export default function HomePage() {
   return (
+
     <div className="space-y-6">
     {/* HERO DENGAN BACKGROUND IMAGE */}
     <section 
@@ -169,26 +37,7 @@ export default async function HomePage() {
       </section>
 
       {/* KAS RT */}
-      <section>
-        <div className="bg-background rounded-3xl shadow-sm border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold">Ringkasan Kas RT</h2>
-              <p className="text-slate-500 dark:text-slate-400">Last Update : {kas.lastupdatetime}</p>
-            </div>
-
-            <Link href="/transparansi" className="text-green-600 font-medium">
-              Lihat Detail →
-            </Link>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <KasCard title="Pemasukan bulan ini" value={kas.pemasukan} color="text-green-600" />
-            <KasCard title="Pengeluaran bulan ini" value={kas.pengeluaran} color="text-red-600" />
-            <KasCard title="Saldo" value={kas.saldo} color="text-blue-600" />
-          </div>
-        </div>
-      </section>
+      <KasSummary />
 
       {/* MENU CEPAT */}
       <section>
@@ -266,16 +115,6 @@ function Card({ title, value, color,emoji }: { title: string; value: string; col
   );
 }
 
-function KasCard({ title, value, color }: { title: string; value: number; color: string }) {
-  return (
-    <div className="border rounded-xl p-4 shadow-sm">
-      <p className="text-slate-500 dark:text-slate-400">{title}</p>
-      <h3 className={`text-2xl font-bold mt-2 ${color}`}>
-        Rp {Number(value).toLocaleString("id-ID")}
-      </h3>
-    </div>
-  );
-}
 
 function MenuCard({ title, desc, href, emoji }: { title: string; desc: string; href: string; emoji: string }) {
   return (
