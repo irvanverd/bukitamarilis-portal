@@ -72,6 +72,12 @@ export default function TransparansiTables() {
   // Posisi 3 bulan yang sedang ditampilkan di HP
   const [mobileStartMonth, setMobileStartMonth] = useState(0);
 
+  
+const [expandedGroups, setExpandedGroups] = useState<
+Record<string, boolean>
+>({});
+
+
   const listPilihanBulan = [
     { id: "1", nama: "Januari", short: "Jan" },
     { id: "2", nama: "Februari", short: "Feb" },
@@ -86,6 +92,26 @@ export default function TransparansiTables() {
     { id: "11", nama: "November", short: "Nov" },
     { id: "12", nama: "Desember", short: "Des" },
   ];
+
+  
+const groupedData = useMemo(() => {
+  const groups = new Map<string, KeuanganDetail[]>();
+
+  dataKeuangan.forEach((item) => {
+    const groupName = String(item.group ?? "Lainnya").trim() || "Lainnya";
+
+    if (!groups.has(groupName)) {
+      groups.set(groupName, []);
+    }
+
+    groups.get(groupName)!.push(item);
+  });
+
+  return Array.from(groups, ([name, items]) => ({
+    name,
+    items,
+  }));
+}, [dataKeuangan]);
 
   // =========================================================
   // FORMAT RUPIAH
@@ -600,7 +626,7 @@ export default function TransparansiTables() {
       </>
     ) : (
       <>
-        🖼️
+        ⬇
         Unduh LPJ
       </>
     )}
@@ -744,8 +770,26 @@ export default function TransparansiTables() {
     </thead>
 
     <tbody>
-      {dataKeuangan.map((item, idx) => (
-        <tr key={idx}>
+      {groupedData.flatMap((group) => [
+        <tr key={`group-export-${group.name}`}>
+          <td
+            colSpan={selectedBulan === "all" ? 14 : 3}
+            className="border border-slate-300 bg-slate-200 px-4 py-2 font-bold text-slate-800"
+          >
+            {group.name}
+          </td>
+        </tr>,
+        ...group.items.map((item, idx) => (
+        <tr
+          key={`${group.name}-${idx}`}
+          className={`${
+            item.header?.toString().trim().toUpperCase() === "H"
+              ? "bg-yellow-100 font-bold [&_td]:underline"
+              : item.header?.toString().trim().toUpperCase() === "T"
+              ? "bg-blue-100 font-bold [&_td]:underline"
+              : "bg-white"
+          }`}
+        >
           <td
             className="
               border
@@ -844,7 +888,8 @@ export default function TransparansiTables() {
             </td>
           )}
         </tr>
-      ))}
+        )),
+      ])}
     </tbody>
   </table>
 
@@ -947,43 +992,18 @@ export default function TransparansiTables() {
                 </div>
 
                 {/* Tabel Mobile */}
-                <div
-                  className="
-                    bg-white
-                    rounded-xl
-                    border
-                    border-slate-200
-                    shadow-sm
-                    overflow-hidden
-                    w-full
-                  "
-                >
-                  <table className="w-full table-fixed text-left border-collapse">
+                <div className="max-h-[70vh] overflow-auto">
+                <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-200">
                         <th
-                          className="
-                          
-                            px-2
-                            py-3
-                            text-[10px]
-                            font-bold
-                            text-slate-600
-                            w-[15%]
-                          "
+                         className="sticky top-0 z-30 bg-slate-100 p-3 border-b border-slate-200"
                         >
                           Account
                         </th>
 
                         <th
-                          className="
-                            px-2
-                            py-3
-                            text-[10px]
-                            font-bold
-                            text-slate-600
-                            w-[31%]
-                          "
+                         className="sticky top-0 z-30 bg-slate-100 p-3 border-b border-slate-200"
                         >
                           Keterangan
                         </th>
@@ -991,18 +1011,9 @@ export default function TransparansiTables() {
                         {mobileMonths.map((bulan) => (
                           <th
                             key={bulan.nama}
-                            className="
-                              px-1
-                              py-3
-                              text-[9px]
-                              font-bold
-                              text-slate-600
-                              text-center
-                              bg-slate-50
-                              w-[28%]
-                            "
+                          className="sticky top-0 z-20 bg-slate-100 p-3 border-b border-slate-200 whitespace-nowrap"
                           >
-                            {bulan.short.toUpperCase()}
+                            {bulan.short}
                           </th>
                         ))}
                       </tr>
@@ -1024,10 +1035,40 @@ export default function TransparansiTables() {
                           </td>
                         </tr>
                       ) : (
-                        dataKeuangan.map((item, idx) => (
+                        groupedData.flatMap((group) => [
+                          <tr key={`group-mobile-${group.name}`}>
+                            <td colSpan={2 + mobileMonths.length} className="bg-slate-200 px-2 py-3 text-slate-800">
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 text-left text-xs font-bold"
+                                aria-expanded={expandedGroups[group.name] ?? true}
+                                onClick={() => setExpandedGroups((prev) => ({
+                                  ...prev,
+                                  [group.name]: !(prev[group.name] ?? true),
+                                }))}
+                              >
+                                <span>{(expandedGroups[group.name] ?? true) ? "▼" : "▶"}</span>
+                                <span>{group.name}</span>
+                                <span className="ml-auto font-normal text-slate-500">{group.items.length} data</span>
+                              </button>
+                            </td>
+                          </tr>,
+                          ...((expandedGroups[group.name] ?? true)
+                            ? group.items.map((item, idx) => (
                           <tr
-                            key={idx}
-                            className="hover:bg-slate-50/80"
+                            key={`${group.name}-${idx}`}
+                           
+className={`
+  ${
+    item.header?.toString().trim().toUpperCase() === "H"
+      ? "bg-yellow-100 font-bold [&_td]:underline"
+      : item.header?.toString().trim().toUpperCase() === "T"
+      ? "bg-blue-100 font-bold [&_td]:underline"
+      : "bg-white"
+  }
+  hover:brightness-95
+`}
+
                           >
                             <td className="px-2 py-3 align-top">
                               <span
@@ -1040,10 +1081,9 @@ export default function TransparansiTables() {
                                   font-semibold
                                   break-words
                                   ${
-                                    item.header?.toString() ===
-                                    "T"
-                                      ? "bg-emerald-50 text-emerald-700"
-                                      : "bg-rose-50 text-rose-700"
+                                    item.header?.toString() === "T"
+                                      ? "text-slate-800"
+                                      : "text-slate-700"
                                   }
                                 `}
                               >
@@ -1102,6 +1142,8 @@ export default function TransparansiTables() {
                             ))}
                           </tr>
                         ))
+                            : []),
+                        ])
                       )}
                     </tbody>
                   </table>
@@ -1124,58 +1166,34 @@ export default function TransparansiTables() {
                     overflow-hidden
                   "
                 >
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr
-                          className="
-                            bg-slate-100
-                            border-b
-                            border-slate-200
-                            text-slate-700
-                            text-sm
-                            font-semibold
-                          "
-                        >
-                          <th className="p-4">
-                            Account
-                          </th>
+                  <div className="max-h-[70vh] overflow-auto">
+                   <table className="w-full text-left border-collapse">
+                   <thead>
+  <tr className="text-sm font-semibold text-slate-700">
+    <th className="sticky top-0 z-30 bg-slate-100 border-b border-slate-200 p-4 text-left">
+      Account
+    </th>
 
-                          <th className="p-4">
-                            Keterangan
-                          </th>
+    <th className="sticky top-0 z-30 bg-slate-100 border-b border-slate-200 p-4 text-left">
+      Keterangan
+    </th>
 
-                          {selectedBulan === "all" ? (
-                            listPilihanBulan.map((bulan) => (
-                              <th
-                                key={bulan.nama}
-                                className="
-                                  p-3
-                                  font-semibold
-                                  text-slate-600
-                                  bg-slate-50
-                                  text-center
-                                  whitespace-nowrap
-                                "
-                              >
-                                {bulan.nama.toUpperCase()}
-                              </th>
-                            ))
-                          ) : (
-                            <th
-                              className="
-                                p-3
-                                font-bold
-                                text-blue-800
-                                bg-blue-50/50
-                                text-center
-                              "
-                            >
-                              {selectedBulan.toUpperCase()}
-                            </th>
-                          )}
-                        </tr>
-                      </thead>
+    {selectedBulan === "all" ? (
+      listPilihanBulan.map((bulan) => (
+        <th
+          key={bulan.nama}
+          className="sticky top-0 z-20 bg-slate-100 border-b border-slate-200 p-3 text-right whitespace-nowrap"
+        >
+          {bulan.nama.toUpperCase()}
+        </th>
+      ))
+    ) : (
+      <th className="sticky top-0 z-20 bg-blue-50 border-b border-slate-200 p-3 text-right whitespace-nowrap">
+        {selectedBulan.toUpperCase()}
+      </th>
+    )}
+  </tr>
+</thead>
 
                       <tbody
                         className="
@@ -1203,10 +1221,40 @@ export default function TransparansiTables() {
                             </td>
                           </tr>
                         ) : (
-                          dataKeuangan.map((item, idx) => (
+                          groupedData.flatMap((group) => [
+                            <tr key={`group-desktop-${group.name}`}>
+                              <td colSpan={selectedBulan === "all" ? 14 : 3} className="bg-slate-200 px-4 py-3 text-slate-800">
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-2 text-left font-bold"
+                                  aria-expanded={expandedGroups[group.name] ?? true}
+                                  onClick={() => setExpandedGroups((prev) => ({
+                                    ...prev,
+                                    [group.name]: !(prev[group.name] ?? true),
+                                  }))}
+                                >
+                                  <span>{(expandedGroups[group.name] ?? true) ? "▼" : "▶"}</span>
+                                  <span>{group.name}</span>
+                                  <span className="ml-auto text-xs font-normal text-slate-500">{group.items.length} data</span>
+                                </button>
+                              </td>
+                            </tr>,
+                            ...((expandedGroups[group.name] ?? true)
+                              ? group.items.map((item, idx) => (
                             <tr
-                              key={idx}
-                              className="hover:bg-slate-50/80"
+                              key={`${group.name}-${idx}`}
+                             
+className={`
+  ${
+    item.header?.toString().trim().toUpperCase() === "H"
+      ? "bg-yellow-100 font-bold [&_td]:underline"
+      : item.header?.toString().trim().toUpperCase() === "T"
+      ? "bg-blue-100 font-bold [&_td]:underline"
+      : "bg-white"
+  }
+  hover:brightness-95
+`}
+
                             >
                               <td className="p-4 align-top">
                                 <span
@@ -1217,10 +1265,9 @@ export default function TransparansiTables() {
                                     text-xs
                                     font-semibold
                                     ${
-                                      item.header?.toString() ===
-                                      "T"
-                                        ? "bg-emerald-50 text-emerald-700"
-                                        : "bg-rose-50 text-rose-700"
+                                      item.header?.toString() === "T"
+                                      ? "text-slate-800"
+                                      : "text-slate-700"
                                     }
                                   `}
                                 >
@@ -1291,6 +1338,8 @@ export default function TransparansiTables() {
                               )}
                             </tr>
                           ))
+                              : []),
+                          ])
                         )}
                       </tbody>
                     </table>
