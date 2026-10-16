@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Menu, X } from "lucide-react";
+import InstallPWAButton from "./InstallPWAButton";
 
 import ThemeSwitcher from "./ThemeSwitcher";
 
@@ -93,6 +94,7 @@ export default function Navbar() {
 
           {/* Right */}
           <div className="hidden lg:flex items-center gap-3">
+            <InstallPWAButton />
             <ThemeSwitcher />
           </div>
 
@@ -146,6 +148,7 @@ export default function Navbar() {
             })}
 
             <div className="border-t p-4 space-y-3">
+              <InstallPWAButton />
               <ThemeSwitcher />
             </div>
 
