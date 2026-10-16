@@ -19,6 +19,14 @@ export default function InstallPWAButton() {
     setIsInstalled(standalone || iosStandalone);
     setIsIOS(/iphone|ipad|ipod/i.test(navigator.userAgent));
 
+    // Register a service worker so Chromium can evaluate the site as a PWA.
+    // The worker is intentionally network-only; it does not cache private or live portal data.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((error) => {
+        console.error("PWA service worker registration failed:", error);
+      });
+    }
+
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
@@ -48,11 +56,11 @@ export default function InstallPWAButton() {
     }
 
     if (isIOS) {
-      window.alert('Untuk memasang Portal Amarilis di iPhone/iPad:1. Buka website ini melalui Safari.2. Tekan tombol Share (ikon kotak dengan panah ke atas).3. Pilih "Add to Home Screen" / "Tambahkan ke Layar Utama".4. Tekan "Add" / "Tambah".');
+      window.alert('Not Support iPhone/iPad.');
       return;
     }
 
-    window.alert('Instalasi belum tersedia di browser ini. Pastikan website sudah dibuka melalui HTTPS dan manifest serta ikon PWA sudah terpasang. Di Chrome, Anda juga bisa membuka menu ⋮ lalu pilih "Install app" atau "Tambahkan ke layar utama" jika tersedia.');
+    window.alert('Chrome belum menyediakan prompt instalasi untuk halaman ini. Pastikan deployment terbaru sudah aktif, lalu muat ulang website. Di Chrome desktop, buka menu ⋮ dan cari "Install MyAmarilis…" atau "Cast, save and share" > "Install page as app…". Jika opsi itu tidak ada, buka DevTools (F12) > Application > Manifest untuk melihat kesalahan manifest atau ikon. Pada Android, gunakan Chrome lalu buka menu ⋮ > Install app / Add to Home screen.');
   };
 
   return (
