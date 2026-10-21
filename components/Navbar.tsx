@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Menu, X } from "lucide-react";
-import InstallPWAButton from "./InstallPWAButton";
 
 import ThemeSwitcher from "./ThemeSwitcher";
 
@@ -24,19 +23,26 @@ const menus = [
     name: "Kegiatan",
     href: "/kegiatan",
   },
+  /*{
+    name: "Daftar Penghuni",
+    href: "/daftar-penghuni",
+  }, */
   {
     name: "Pengurus",
     href: "/pengurus",
   },
-  {
+ /* {
     name: "Tentang",
     href: "/tentang",
-  },
+  },*/
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  // Portal penghuni memakai navigasi internal sendiri.
+  if (pathname.startsWith("/portal-warga")) return null;
 
   return (
     <header
@@ -94,7 +100,6 @@ export default function Navbar() {
 
           {/* Right */}
           <div className="hidden lg:flex items-center gap-3">
-            <InstallPWAButton />
             <ThemeSwitcher />
           </div>
 
@@ -148,7 +153,6 @@ export default function Navbar() {
             })}
 
             <div className="border-t p-4 space-y-3">
-              <InstallPWAButton />
               <ThemeSwitcher />
             </div>
 

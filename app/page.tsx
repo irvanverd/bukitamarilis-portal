@@ -44,10 +44,16 @@ export default function HomePage() {
         <h2 className="text-2xl font-bold mb-4">Menu Utama</h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MenuCard
+  title="Portal Warga"
+  desc="Tagihan IPL, Info Unit dan Pelayanan Warga"
+  href="/portal-warga"
+  emoji="🏠"
+/>
           <MenuCard title="Transparansi" desc="Laporan keuangan RT" href="/transparansi" emoji="📊" />
           <MenuCard title="Kegiatan" desc="Agenda dan dokumentasi" href="/kegiatan" emoji="🎉" />
           <MenuCard title="Pengurus" desc="Susunan pengurus RT" href="/pengurus" emoji="👨🏻‍🎓" />
-          <MenuCard title="Tentang" desc="Profil,VISI & MISI RT 07 / XIV Bukit Amarilis" href="/tentang" emoji="🏡" />
+      
         </div>
       </section>
 

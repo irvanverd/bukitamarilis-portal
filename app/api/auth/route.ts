@@ -1,54 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_SESSION_TTL_SECONDS, createAdminSession } from "@/lib/adminSession";
 
 export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const configuredPassword = process.env.ADMIN_PASSWORD;
 
-  const body = await req.json();
+    if (!configuredPassword) {
+      return NextResponse.json(
+        { success: false, message: "Password admin belum dikonfigurasi di server." },
+        { status: 500 }
+      );
+    }
 
-  if (body.password !== process.env.ADMIN_PASSWORD) {
+    if (typeof body.password !== "string" || body.password !== configuredPassword) {
+      return NextResponse.json(
+        { success: false, message: "Password salah." },
+        { status: 401 }
+      );
+    }
 
-    return NextResponse.json({
-      success: false,
-      message: "Password salah"
+    const username = String(body.username || "Admin").trim().slice(0, 80) || "Admin";
+    const res = NextResponse.json({ success: true, username });
+    const secure = process.env.NODE_ENV === "production";
+
+    // Cookie bertanda tangan, divalidasi server untuk route admin.
+    res.cookies.set("admin_session", createAdminSession(username), {
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: ADMIN_SESSION_TTL_SECONDS,
     });
 
+    // Cookie lama tetap dipasang agar UI admin yang sudah ada tidak rusak.
+    res.cookies.set("admin_user", username, {
+      httpOnly: false,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: ADMIN_SESSION_TTL_SECONDS,
+    });
+    res.cookies.set("admin_ui", "1", {
+      httpOnly: false,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: ADMIN_SESSION_TTL_SECONDS,
+    });
+    res.cookies.set("admin", "1", {
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: ADMIN_SESSION_TTL_SECONDS,
+    });
+
+    return res;
+  } catch (error) {
+    console.error("Admin authentication error:", error);
+    return NextResponse.json(
+      { success: false, message: "Permintaan login tidak valid." },
+      { status: 400 }
+    );
   }
-
-  const res = NextResponse.json({
-    success: true
-  });
-
-  // Simpan nama user
-  res.cookies.set("admin_user", body.username || "Admin", {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 8,
-  });
-
-  // Cookie untuk UI
-res.cookies.set("admin_ui", "1", {
-  httpOnly: false,
-  sameSite: "lax",
-  path: "/",
-  maxAge: 60 * 60 * 8,
-});
-
-// Nama user untuk UI
-res.cookies.set("admin_user", body.username || "Admin", {
-  httpOnly: false,
-  sameSite: "lax",
-  path: "/",
-  maxAge: 60 * 60 * 8,
-});
-
-  // Penanda sudah login
-  res.cookies.set("admin", "1", {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 8,
-  });
-
-
-  return res;
 }
