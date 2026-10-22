@@ -31,10 +31,10 @@ const menus = [
     name: "Pengurus",
     href: "/pengurus",
   },
- /* {
+  {
     name: "Tentang",
     href: "/tentang",
-  },*/
+  },
 ];
 
 export default function Navbar() {

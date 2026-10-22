@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -113,8 +114,8 @@ function SectionHeading({ title, description, action }: { title: string; descrip
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">{title}</h2>
-        {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
+        <h2 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">{title}</h2>
+        {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
       </div>
       {action}
     </div>
@@ -122,7 +123,11 @@ function SectionHeading({ title, description, action }: { title: string; descrip
 }
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm md:p-6 ${className}`}>{children}</section>;
+  return (
+    <section className={`rounded-2xl border border-border bg-card text-card-foreground p-5 shadow-sm transition-colors duration-300 md:p-6 ${className}`}>
+      {children}
+    </section>
+  );
 }
 
 export default function PortalWargaPage() {
@@ -198,69 +203,81 @@ export default function PortalWargaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7f5] text-slate-800">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[258px] flex-col border-r border-slate-200 bg-white lg:flex">
-          <Link href="/" className="flex h-[78px] items-center gap-3 border-b border-slate-100 px-6">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-white"><Home size={21} /></span>
-            <span><span className="block text-base font-extrabold tracking-tight text-slate-900">MyAmarilis</span><span className="mt-0.5 block text-[11px] text-slate-500">Portal Penghuni</span></span>
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[258px] flex-col border-r border-border bg-card lg:flex">
+          <Link href="/" className="flex h-[78px] items-center gap-3 border-b border-border/60 px-6">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Home size={21} /></span>
+            <span><span className="block text-base font-extrabold tracking-tight text-foreground">MyAmarilis</span><span className="mt-0.5 block text-[11px] text-muted-foreground">Portal Penghuni</span></span>
           </Link>
           <div className="px-4 pt-6">
-            <p className="px-3 pb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Menu utama</p>
+            <p className="px-3 pb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70">Menu utama</p>
             <nav className="space-y-1.5" aria-label="Navigasi portal penghuni">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeTab === item.id;
                 return (
-                  <button key={item.id} onClick={() => goTo(item.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${active ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
+                  <button key={item.id} onClick={() => goTo(item.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${active ? "bg-primary/10 text-primary ring-1 ring-emerald-100" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                     <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
                     <span>{item.label}</span>
                     {active ? <ChevronRight size={16} className="ml-auto" /> : null}
                   </button>
+                  
                 );
               })}
             </nav>
           </div>
           <div className="mt-auto p-4">
-            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm"><CircleHelp size={18} /></span>
-              <p className="mt-3 text-sm font-bold text-slate-800">Butuh bantuan?</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">Hubungi pengurus RT untuk informasi layanan warga.</p>
-              <button onClick={() => goTo("komplain")} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900">Lihat layanan <ArrowRight size={14} /></button>
+            <div className="rounded-2xl bg-muted p-4 ring-1 ring-border/50">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-card text-primary shadow-sm"><CircleHelp size={18} /></span>
+              <p className="mt-3 text-sm font-bold text-foreground">Butuh bantuan?</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Hubungi pengurus RT untuk informasi layanan warga.</p>
+              <button onClick={() => goTo("komplain")} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary hover:opacity-80">Lihat layanan <ArrowRight size={14} /></button>
             </div>
-            <Link href="/" className="mt-4 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800"><LogOut size={17} />Kembali ke portal publik</Link>
+            <Link href="/" className="mt-4 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"><LogOut size={17} />Kembali ke portal publik</Link>
           </div>
         </aside>
 
         {mobileNavOpen ? <button aria-label="Tutup menu" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden" /> : null}
         {mobileNavOpen ? (
-          <aside className="fixed inset-y-0 left-0 z-50 w-[285px] bg-white p-4 shadow-xl lg:hidden">
-            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white"><Home size={19} /></span><span className="font-extrabold text-slate-900">MyAmarilis</span></div>
-              <button onClick={() => setMobileNavOpen(false)} aria-label="Tutup menu" className="rounded-lg p-2 hover:bg-slate-100"><X size={20} /></button>
+          <aside className="fixed inset-y-0 left-0 z-50 w-[285px] bg-card p-4 shadow-xl lg:hidden">
+            <div className="mb-6 flex items-center justify-between border-b border-border/60 pb-4">
+              <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Home size={19} /></span><span className="font-extrabold text-foreground">MyAmarilis</span></div>
+              <button onClick={() => setMobileNavOpen(false)} aria-label="Tutup menu" className="rounded-lg p-2 hover:bg-muted"><X size={20} /></button>
             </div>
             <nav className="space-y-1.5">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                return <button key={item.id} onClick={() => goTo(item.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold ${activeTab === item.id ? "bg-emerald-50 text-emerald-800" : "text-slate-500 hover:bg-slate-50"}`}><Icon size={18} />{item.label}</button>;
+                return <button key={item.id} onClick={() => goTo(item.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold ${activeTab === item.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}><Icon size={18} />{item.label}</button>;
               })}
+              <div className="mt-5 space-y-3 border-t border-border px-3 pt-4">
+  <p className="text-xs font-bold text-muted-foreground">
+    Tema tampilan
+  </p>
+
+  <ThemeSwitcher />
+</div>
             </nav>
-            <Link href="/" className="mt-5 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-500"><LogOut size={17} />Kembali ke portal publik</Link>
+            <Link href="/" className="mt-5 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted-foreground"><LogOut size={17} />Kembali ke portal publik</Link>
           </aside>
         ) : null}
 
         <div className="min-w-0 flex-1 lg:ml-[258px]">
-          <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur md:px-7">
+          <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b border-border/80 bg-card/90 px-4 backdrop-blur md:px-7">
             <div className="flex items-center gap-3">
-              <button onClick={() => setMobileNavOpen(true)} aria-label="Buka menu" className="rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden"><Menu size={19} /></button>
-              <div><p className="text-sm font-bold text-slate-900 md:text-base">{currentTab.label}</p><p className="hidden text-[11px] text-slate-400 sm:block">RT 07 / RW 14 · Bukit Amarilis</p></div>
+              <button onClick={() => setMobileNavOpen(true)} aria-label="Buka menu" className="rounded-xl border border-border p-2 text-muted-foreground lg:hidden"><Menu size={19} /></button>
+              <div><p className="text-sm font-bold text-foreground md:text-base">{currentTab.label}</p><p className="hidden text-[11px] text-muted-foreground/70 sm:block">RT 07 / RW 14 · Bukit Amarilis</p></div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden shrink-0 sm:block">
+    <ThemeSwitcher />
+  </div>
               <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 sm:inline-flex">Mode demo · data dummy</span>
-              <button onClick={() => setToast("Belum ada notifikasi baru pada mode demo.")} aria-label="Notifikasi" className="relative rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-500" /></button>
-              <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3 md:pl-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-extrabold text-emerald-800">IV</div>
-                <div className="hidden sm:block"><p className="text-xs font-bold text-slate-800">Irvan Verdiansyah</p><p className="text-[10px] text-slate-500">Blok AR.16/09</p></div>
+              
+              <button onClick={() => setToast("Belum ada notifikasi baru pada mode demo.")} aria-label="Notifikasi" className="relative rounded-xl border border-border p-2 text-muted-foreground hover:bg-muted"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-500" /></button>
+              <div className="flex items-center gap-2.5 border-l border-border pl-3 md:pl-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-extrabold text-primary">IV</div>
+                <div className="hidden sm:block"><p className="text-xs font-bold text-foreground">Irvan Verdiansyah</p><p className="text-[10px] text-muted-foreground">Blok AR.16/09</p></div>
               </div>
             </div>
           </header>
@@ -269,16 +286,16 @@ export default function PortalWargaPage() {
             <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 sm:text-sm">
               <strong>Pratinjau tampilan.</strong> Nama, unit, tarif IPL, tagihan, riwayat pembayaran, komplain, dan surat di halaman ini hanyalah data contoh. Belum terhubung ke akun penghuni atau Google Sheets.
             </div>
-            {toast ? <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><span>{toast}</span><button onClick={() => setToast("")} aria-label="Tutup pesan"><X size={16} /></button></div> : null}
+            {toast ? <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-primary/10 px-4 py-3 text-sm text-primary"><span>{toast}</span><button onClick={() => setToast("")} aria-label="Tutup pesan"><X size={16} /></button></div> : null}
 
             {activeTab === "ringkasan" ? (
               <>
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-                  <div><p className="text-sm font-medium text-emerald-700">Rabu, 21 Oktober 2026</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">Selamat datang, Irvan <span aria-hidden="true">👋</span></h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Pantau tagihan IPL, informasi unit rumah, dan layanan administrasi warga dari satu tempat.</p></div>
-                  <button onClick={() => goTo("unit")} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50">Lihat unit saya <ArrowRight size={16} /></button>
+                  <div><p className="text-sm font-medium text-primary">Rabu, 21 Oktober 2026</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground md:text-3xl">Selamat datang, Irvan <span aria-hidden="true">👋</span></h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Pantau tagihan IPL, informasi unit rumah, dan layanan administrasi warga dari satu tempat.</p></div>
+                  <button onClick={() => goTo("unit")} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted">Lihat unit saya <ArrowRight size={16} /></button>
                 </div>
 
-                <section className="relative mb-6 overflow-hidden rounded-[26px] bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-700 p-5 text-white shadow-lg shadow-emerald-900/10 md:p-7">
+                <section className="relative mb-6 overflow-hidden rounded-[26px] bg-primary text-primary-foreground p-5 text-primary-foreground shadow-lg shadow-emerald-900/10 md:p-7">
                   <div className="pointer-events-none absolute -right-8 -top-16 h-56 w-56 rounded-full border-[28px] border-white/5" />
                   <div className="pointer-events-none absolute -bottom-24 right-32 h-60 w-60 rounded-full border-[32px] border-white/5" />
                   <div className="relative grid gap-6 md:grid-cols-[1.3fr_0.7fr] md:items-center">
@@ -287,11 +304,11 @@ export default function PortalWargaPage() {
                       <p className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">{money(110000)}</p>
                       <p className="mt-2 text-xs text-emerald-100 md:text-sm">3 periode belum lunas · Termasuk tagihan Oktober 2026</p>
                       <div className="mt-5 flex flex-wrap gap-2.5">
-                        <button onClick={() => goTo("ipl")} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-800 shadow-sm hover:bg-emerald-50">Lihat detail tagihan <ArrowRight size={16} /></button>
-                        <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-3 py-2.5 text-xs font-semibold"><CalendarDays size={15} /> Jatuh tempo terdekat: 31 Okt</span>
+                        <button onClick={() => goTo("ipl")} className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10">Lihat detail tagihan <ArrowRight size={16} /></button>
+                        <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-card/10 px-3 py-2.5 text-xs font-semibold"><CalendarDays size={15} /> Jatuh tempo terdekat: 31 Okt</span>
                       </div>
                     </div>
-                    <div className="relative rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm md:p-5">
+                    <div className="relative rounded-2xl border border-white/15 bg-card/10 p-4 backdrop-blur-sm md:p-5">
                       <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-emerald-50">Rincian tagihan</span><ReceiptText size={19} className="text-emerald-100" /></div>
                       <div className="mt-4 space-y-3">
                         <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">Tunggakan sebelumnya</span><span className="font-bold">{money(220000)}</span></div>
@@ -302,27 +319,25 @@ export default function PortalWargaPage() {
                   </div>
                 </section>
 
-                <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <StatCard icon={ReceiptText} label="Tagihan belum lunas" value="3 periode" detail="Agustus – Oktober 2026" iconClass="bg-amber-50 text-amber-700" />
-                  <StatCard icon={Wallet} label="Tarif IPL / bulan" value={money(110000)} detail="Data simulasi unit AR-16/09" iconClass="bg-emerald-50 text-emerald-700" />
-                  <StatCard icon={CheckCircle2} label="Pembayaran tercatat" value={money(paidThisYear)} detail="3 pembayaran dummy" iconClass="bg-sky-50 text-sky-700" />
+                <section className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
+                  <StatCard icon={Wallet} label="Tarif IPL / bulan" value={money(110000)} detail="Data simulasi unit AR-16/09" iconClass="bg-primary/10 text-primary" />
                   <StatCard icon={MessageSquareWarning} label="Komplain aktif" value={`${complaints.filter((item) => item.status !== "Selesai").length} laporan`} detail="Termasuk contoh data" iconClass="bg-violet-50 text-violet-700" />
-                </section>
+                  </section>
 
                 <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
                   <Card>
-                    <SectionHeading title="Ringkasan IPL" description="Tagihan terbaru pada unit Anda" action={<button onClick={() => goTo("ipl")} className="text-xs font-bold text-emerald-700 hover:text-emerald-900">Lihat semua</button>} />
+                    <SectionHeading title="Ringkasan IPL" description="Tagihan terbaru pada unit Anda" action={<button onClick={() => goTo("ipl")} className="text-xs font-bold text-primary hover:opacity-80">Lihat semua</button>} />
                     <div className="space-y-3">
                       {payments.slice(0, 3).map((item) => <PaymentRow key={item.invoice} item={item} />)}
                     </div>
                   </Card>
                   <Card>
-                    <SectionHeading title="Unit saya" description="Informasi singkat unit" action={<button onClick={() => goTo("unit")} className="text-xs font-bold text-emerald-700 hover:text-emerald-900">Lihat profil</button>} />
+                    <SectionHeading title="Unit saya" description="Informasi singkat unit" action={<button onClick={() => goTo("unit")} className="text-xs font-bold text-primary hover:opacity-80">Lihat profil</button>} />
                     <div className="flex gap-4">
-                      <div className="flex h-[76px] w-[88px] shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-400"><Home size={29} strokeWidth={1.4} /></div>
-                      <div className="min-w-0"><p className="font-bold text-slate-900">Blok AR.16/09</p><p className="mt-1 text-sm text-slate-500">Irvan Verdiansyah</p><p className="mt-2 text-xs text-slate-500">Luas rumah <strong className="text-slate-700">120 m²</strong></p><p className="mt-1 text-xs text-slate-500">Foto rumah belum diunggah</p></div>
+                      <div className="flex h-[76px] w-[88px] shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-muted text-muted-foreground/70"><Home size={29} strokeWidth={1.4} /></div>
+                      <div className="min-w-0"><p className="font-bold text-foreground">Blok AR.16/09</p><p className="mt-1 text-sm text-muted-foreground">Irvan Verdiansyah</p><p className="mt-2 text-xs text-muted-foreground">Luas rumah <strong className="text-foreground">120 m²</strong></p><p className="mt-1 text-xs text-muted-foreground">Foto rumah belum diunggah</p></div>
                     </div>
-                    <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3"><div className="flex items-center justify-between gap-3 text-sm"><span className="text-slate-500">Tarif IPL bulanan</span><span className="font-extrabold text-slate-900">{money(110000)}</span></div></div>
+                    <div className="mt-4 rounded-xl bg-muted px-4 py-3"><div className="flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">Tarif IPL bulanan</span><span className="font-extrabold text-foreground">{money(110000)}</span></div></div>
                   </Card>
                 </div>
 
@@ -338,15 +353,15 @@ export default function PortalWargaPage() {
                 <SectionHeading title="Unit saya" description="Profil penghuni dan data unit rumah yang terdaftar." />
                 <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
                   <Card>
-                    <div className="mb-4 flex items-center justify-between"><h3 className="font-bold text-slate-900">Foto rumah</h3><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500">Preview lokal</span></div>
-                    <div className="relative flex min-h-[230px] items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50">
-                      {housePhoto ? <Image src={housePhoto} alt="Pratinjau foto rumah" fill unoptimized sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" /> : <div className="px-6 py-10 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><ImagePlus size={29} /></span><p className="mt-4 text-sm font-bold text-slate-800">Foto rumah belum diunggah</p><p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">Pilih foto untuk melihat pratinjau. Pada tahap ini file tidak disimpan ke server.</p></div>}
+                    <div className="mb-4 flex items-center justify-between"><h3 className="font-bold text-foreground">Foto rumah</h3><span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">Preview lokal</span></div>
+                    <div className="relative flex min-h-[230px] items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted">
+                      {housePhoto ? <Image src={housePhoto} alt="Pratinjau foto rumah" fill unoptimized sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" /> : <div className="px-6 py-10 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"><ImagePlus size={29} /></span><p className="mt-4 text-sm font-bold text-foreground">Foto rumah belum diunggah</p><p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">Pilih foto untuk melihat pratinjau. Pada tahap ini file tidak disimpan ke server.</p></div>}
                     </div>
-                    <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"><ImagePlus size={17} />{housePhoto ? "Ganti foto rumah" : "Pilih foto rumah"}<input type="file" accept="image/*" className="hidden" onChange={handlePhoto} /></label>
-                    <p className="mt-2 text-center text-[11px] text-slate-400">Format gambar · Maksimal 5 MB</p>
+                    <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-bold text-foreground hover:bg-muted"><ImagePlus size={17} />{housePhoto ? "Ganti foto rumah" : "Pilih foto rumah"}<input type="file" accept="image/*" className="hidden" onChange={handlePhoto} /></label>
+                    <p className="mt-2 text-center text-[11px] text-muted-foreground/70">Format gambar · Maksimal 5 MB</p>
                   </Card>
                   <Card>
-                    <div className="mb-5 flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-slate-900">Profil penghuni</h3><p className="mt-1 text-sm text-slate-500">Data contoh untuk rancangan tampilan.</p></div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700"><ShieldCheck size={13} className="mr-1 inline" />Terdaftar (demo)</span></div>
+                    <div className="mb-5 flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-foreground">Profil penghuni</h3><p className="mt-1 text-sm text-muted-foreground">Data contoh untuk rancangan tampilan.</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary"><ShieldCheck size={13} className="mr-1 inline" />Terdaftar (demo)</span></div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <ProfileField label="Nama penghuni" value="Irvan Verdiansyah" />
                       <ProfileField label="Nomor HP" value="08•• •••• 1234" />
@@ -366,13 +381,13 @@ export default function PortalWargaPage() {
                 <SectionHeading title="Riwayat pembayaran IPL" description="Daftar tagihan dan status pembayaran unit AR.16/09." />
                 <div className="mb-5 grid gap-4 md:grid-cols-3">
                   <StatCard icon={Wallet} label="Total belum lunas" value={money(110000)} detail="3 periode" iconClass="bg-rose-50 text-rose-700" />
-                  <StatCard icon={CheckCircle2} label="Sudah dibayar" value={money(paidThisYear)} detail="3 periode contoh" iconClass="bg-emerald-50 text-emerald-700" />
+                  <StatCard icon={CheckCircle2} label="Sudah dibayar" value={money(paidThisYear)} detail="3 periode contoh" iconClass="bg-primary/10 text-primary" />
                   <StatCard icon={CalendarDays} label="Jatuh tempo berikutnya" value="31 Okt 2026" detail="IPL bulan Oktober" iconClass="bg-amber-50 text-amber-700" />
                 </div>
                 <Card className="p-0 md:p-0">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 md:px-6"><div><h3 className="font-bold text-slate-900">Semua tagihan</h3><p className="mt-1 text-xs text-slate-500">Periode Mei–Oktober 2026</p></div><span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"><ReceiptText size={14} />{payments.length} transaksi</span></div>
-                  <div className="overflow-x-auto"><table className="w-full min-w-[730px] text-left text-sm"><thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th className="px-6 py-3 font-semibold">Periode</th><th className="px-4 py-3 font-semibold">Nomor tagihan</th><th className="px-4 py-3 font-semibold">Jumlah</th><th className="px-4 py-3 font-semibold">Jatuh tempo</th><th className="px-6 py-3 font-semibold">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{payments.map((item) => <tr key={item.invoice} className="hover:bg-slate-50/70"><td className="px-6 py-4 font-semibold text-slate-800">{item.period}</td><td className="px-4 py-4 text-xs text-slate-500">{item.invoice}</td><td className="px-4 py-4 font-bold text-slate-800">{money(item.amount)}</td><td className="px-4 py-4 text-slate-500">{item.due}</td><td className="px-6 py-4"><StatusPill status={item.status} /></td></tr>)}</tbody></table></div>
-                  <div className="border-t border-slate-100 px-5 py-4 text-xs leading-5 text-slate-500 md:px-6">Tombol pembayaran online belum diaktifkan. Setelah format data sheet IPL disiapkan, daftar ini dapat dipetakan ke kolom tagihan, tanggal pembayaran, dan status.</div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4 md:px-6"><div><h3 className="font-bold text-foreground">Semua tagihan</h3><p className="mt-1 text-xs text-muted-foreground">Periode Mei–Oktober 2026</p></div><span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground"><ReceiptText size={14} />{payments.length} transaksi</span></div>
+                  <div className="overflow-x-auto"><table className="w-full min-w-[730px] text-left text-sm"><thead className="bg-muted text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-6 py-3 font-semibold">Periode</th><th className="px-4 py-3 font-semibold">Nomor tagihan</th><th className="px-4 py-3 font-semibold">Jumlah</th><th className="px-4 py-3 font-semibold">Jatuh tempo</th><th className="px-6 py-3 font-semibold">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{payments.map((item) => <tr key={item.invoice} className="hover:bg-muted/70"><td className="px-6 py-4 font-semibold text-foreground">{item.period}</td><td className="px-4 py-4 text-xs text-muted-foreground">{item.invoice}</td><td className="px-4 py-4 font-bold text-foreground">{money(item.amount)}</td><td className="px-4 py-4 text-muted-foreground">{item.due}</td><td className="px-6 py-4"><StatusPill status={item.status} /></td></tr>)}</tbody></table></div>
+                  <div className="border-t border-border/60 px-5 py-4 text-xs leading-5 text-muted-foreground md:px-6">Tombol pembayaran online belum diaktifkan. Setelah format data sheet IPL disiapkan, daftar ini dapat dipetakan ke kolom tagihan, tanggal pembayaran, dan status.</div>
                 </Card>
               </>
             ) : null}
@@ -382,16 +397,16 @@ export default function PortalWargaPage() {
                 <SectionHeading title="Komplain warga" description="Sampaikan kendala atau masukan terkait lingkungan dan layanan RT." />
                 <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
                   <Card>
-                    <div className="mb-5 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><MessageSquareWarning size={21} /></span><div><h3 className="font-bold text-slate-900">Buat komplain</h3><p className="mt-1 text-xs text-slate-500">Form simulasi — tidak mengirim data</p></div></div>
+                    <div className="mb-5 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><MessageSquareWarning size={21} /></span><div><h3 className="font-bold text-foreground">Buat komplain</h3><p className="mt-1 text-xs text-muted-foreground">Form simulasi — tidak mengirim data</p></div></div>
                     <form onSubmit={submitComplaint} className="space-y-4">
                       <FieldLabel label="Kategori"><select value={complaintCategory} onChange={(event) => setComplaintCategory(event.target.value)} className={fieldClass}><option>Fasilitas umum</option><option>Kebersihan</option><option>Keamanan</option><option>IPL dan administrasi</option><option>Lainnya</option></select></FieldLabel>
                       <FieldLabel label="Judul komplain"><input value={complaintTitle} onChange={(event) => setComplaintTitle(event.target.value)} className={fieldClass} placeholder="Contoh: Lampu jalan tidak menyala" maxLength={100} /></FieldLabel>
                       <FieldLabel label="Detail komplain"><textarea value={complaintDetail} onChange={(event) => setComplaintDetail(event.target.value)} className={`${fieldClass} min-h-[120px] resize-y`} placeholder="Jelaskan lokasi dan kendala yang dialami..." maxLength={1200} /></FieldLabel>
-                      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-800"><Plus size={17} />Tambahkan ke daftar demo</button>
-                      <p className="text-[11px] leading-5 text-slate-400">Pada versi aktif, pengiriman akan disambungkan ke Apps Script dan petugas dapat memperbarui statusnya.</p>
+                      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90"><Plus size={17} />Tambahkan ke daftar demo</button>
+                      <p className="text-[11px] leading-5 text-muted-foreground/70">Pada versi aktif, pengiriman akan disambungkan ke Apps Script dan petugas dapat memperbarui statusnya.</p>
                     </form>
                   </Card>
-                  <div><div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-slate-900">Laporan komplain</h3><span className="text-xs text-slate-500">{complaints.length} laporan contoh</span></div><div className="space-y-3">{complaints.map((item) => <Card key={item.id} className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{item.id} · {item.category}</p><h4 className="mt-2 font-bold text-slate-900">{item.title}</h4><p className="mt-2 text-sm leading-6 text-slate-500">{item.detail}</p></div><StatusPill status={item.status} /></div><div className="mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-3 text-xs text-slate-400"><CalendarDays size={13} />{item.date}</div></Card>)}</div></div>
+                  <div><div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Laporan komplain</h3><span className="text-xs text-muted-foreground">{complaints.length} laporan contoh</span></div><div className="space-y-3">{complaints.map((item) => <Card key={item.id} className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">{item.id} · {item.category}</p><h4 className="mt-2 font-bold text-foreground">{item.title}</h4><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.detail}</p></div><StatusPill status={item.status} /></div><div className="mt-4 flex items-center gap-1.5 border-t border-border/60 pt-3 text-xs text-muted-foreground/70"><CalendarDays size={13} />{item.date}</div></Card>)}</div></div>
                 </div>
               </>
             ) : null}
@@ -401,54 +416,54 @@ export default function PortalWargaPage() {
                 <SectionHeading title="Surat Pengantar" description="Ajukan kebutuhan surat dan pantau status pemrosesannya." />
                 <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
                   <Card>
-                    <div className="mb-5 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-700"><FileText size={21} /></span><div><h3 className="font-bold text-slate-900">Ajukan surat</h3><p className="mt-1 text-xs text-slate-500">Form simulasi layanan administrasi</p></div></div>
+                    <div className="mb-5 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-700"><FileText size={21} /></span><div><h3 className="font-bold text-foreground">Ajukan surat</h3><p className="mt-1 text-xs text-muted-foreground">Form simulasi layanan administrasi</p></div></div>
                     <form onSubmit={submitLetter} className="space-y-4">
                       <FieldLabel label="Jenis surat"><select value={letterType} onChange={(event) => setLetterType(event.target.value)} className={fieldClass}><option>Surat Keterangan Domisili</option><option>Surat Pengantar KTP / KK</option><option>Surat Keterangan Usaha</option><option>Surat Pengantar Nikah</option><option>Surat Keterangan Lainnya</option></select></FieldLabel>
                       <FieldLabel label="Tujuan penggunaan"><textarea value={letterPurpose} onChange={(event) => setLetterPurpose(event.target.value)} className={`${fieldClass} min-h-[115px] resize-y`} placeholder="Jelaskan keperluan surat dan instansi tujuan..." maxLength={800} /></FieldLabel>
-                      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-800"><Plus size={17} />Tambahkan pengajuan demo</button>
-                      <p className="text-[11px] leading-5 text-slate-400">Belum ada proses verifikasi, tanda tangan, atau unduh surat pada mode demo.</p>
+                      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90"><Plus size={17} />Tambahkan pengajuan demo</button>
+                      <p className="text-[11px] leading-5 text-muted-foreground/70">Belum ada proses verifikasi, tanda tangan, atau unduh surat pada mode demo.</p>
                     </form>
                   </Card>
-                  <div><div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-slate-900">Status pengajuan</h3><span className="text-xs text-slate-500">{letters.length} permohonan contoh</span></div>{letters.length === 0 ? <Card className="py-12 text-center"><FileText size={34} className="mx-auto text-slate-300" /><p className="mt-3 font-bold text-slate-800">Belum ada pengajuan surat</p><p className="mt-1 text-sm text-slate-500">Form di sebelah kiri dapat digunakan untuk mencoba tampilan.</p></Card> : <div className="space-y-3">{letters.map((item) => <Card key={item.id} className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{item.id}</p><h4 className="mt-2 font-bold text-slate-900">{item.type}</h4><p className="mt-1 text-sm text-slate-500">Tujuan: {item.purpose}</p></div><StatusPill status={item.status} /></div><div className="mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-3 text-xs text-slate-400"><CalendarDays size={13} />Diajukan {item.date}</div></Card>)}</div>}</div>
+                  <div><div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Status pengajuan</h3><span className="text-xs text-muted-foreground">{letters.length} permohonan contoh</span></div>{letters.length === 0 ? <Card className="py-12 text-center"><FileText size={34} className="mx-auto text-slate-300" /><p className="mt-3 font-bold text-foreground">Belum ada pengajuan surat</p><p className="mt-1 text-sm text-muted-foreground">Form di sebelah kiri dapat digunakan untuk mencoba tampilan.</p></Card> : <div className="space-y-3">{letters.map((item) => <Card key={item.id} className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">{item.id}</p><h4 className="mt-2 font-bold text-foreground">{item.type}</h4><p className="mt-1 text-sm text-muted-foreground">Tujuan: {item.purpose}</p></div><StatusPill status={item.status} /></div><div className="mt-4 flex items-center gap-1.5 border-t border-border/60 pt-3 text-xs text-muted-foreground/70"><CalendarDays size={13} />Diajukan {item.date}</div></Card>)}</div>}</div>
                 </div>
               </>
             ) : null}
 
-            <footer className="mt-8 border-t border-slate-200 pt-5 text-center text-[11px] text-slate-400">© 2026 Portal Warga RT 07 / RW 14 Bukit Amarilis · Tampilan demonstrasi</footer>
+            <footer className="mt-8 border-t border-border pt-5 text-center text-[11px] text-muted-foreground/70">© 2026 Portal Warga RT 07 / RW 14 Bukit Amarilis · Tampilan demonstrasi</footer>
           </main>
         </div>
       </div>
 
-      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white/95 px-1 pb-[max(env(safe-area-inset-bottom),4px)] pt-2 backdrop-blur lg:hidden">
+      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card/95 px-1 pb-[max(env(safe-area-inset-bottom),4px)] pt-2 backdrop-blur lg:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = activeTab === item.id;
-          return <button key={item.id} onClick={() => goTo(item.id)} className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 ${active ? "text-emerald-700" : "text-slate-400"}`}><Icon size={18} strokeWidth={active ? 2.5 : 1.8} /><span className={`max-w-full truncate text-[9px] ${active ? "font-bold" : "font-medium"}`}>{item.shortLabel}</span></button>;
+          return <button key={item.id} onClick={() => goTo(item.id)} className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 ${active ? "text-primary" : "text-muted-foreground/70"}`}><Icon size={18} strokeWidth={active ? 2.5 : 1.8} /><span className={`max-w-full truncate text-[9px] ${active ? "font-bold" : "font-medium"}`}>{item.shortLabel}</span></button>;
         })}
       </nav>
     </div>
   );
 }
 
-const fieldClass = "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-50";
+const fieldClass = "mt-1.5 w-full rounded-xl border border-border bg-card px-3.5 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10";
 
 function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block text-xs font-bold text-slate-700">{label}{children}</label>;
+  return <label className="block text-xs font-bold text-foreground">{label}{children}</label>;
 }
 
 function ProfileField({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
-  return <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5"><p className="text-[11px] font-medium text-slate-500">{label}</p><p className="mt-2 flex items-center gap-1.5 text-sm font-bold text-slate-900">{icon ? <span className="text-emerald-700">{icon}</span> : null}{value}</p></div>;
+  return <div className="rounded-xl border border-border/60 bg-muted/70 p-3.5"><p className="text-[11px] font-medium text-muted-foreground">{label}</p><p className="mt-2 flex items-center gap-1.5 text-sm font-bold text-foreground">{icon ? <span className="text-primary">{icon}</span> : null}{value}</p></div>;
 }
 
 function StatCard({ icon: Icon, label, value, detail, iconClass }: { icon: typeof Wallet; label: string; value: string; detail: string; iconClass: string }) {
-  return <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm md:p-5"><div className="flex items-start justify-between gap-3"><span className="text-xs font-medium text-slate-500">{label}</span><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClass}`}><Icon size={18} /></span></div><p className="mt-3 text-xl font-extrabold tracking-tight text-slate-900 md:text-2xl">{value}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></div>;
+  return <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm md:p-5"><div className="flex items-start justify-between gap-3"><span className="text-xs font-medium text-muted-foreground">{label}</span><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClass}`}><Icon size={18} /></span></div><p className="mt-3 text-xl font-extrabold tracking-tight text-foreground md:text-2xl">{value}</p><p className="mt-1 text-[11px] text-muted-foreground/70">{detail}</p></div>;
 }
 
 function PaymentRow({ item }: { item: (typeof payments)[number] }) {
-  return <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3.5 transition hover:bg-slate-50/70"><div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.status === "Lunas" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{item.status === "Lunas" ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-800">{item.period}</p><p className="mt-1 text-[11px] text-slate-400">Jatuh tempo {item.due}</p></div></div><div className="flex shrink-0 flex-col items-end gap-2"><span className="text-sm font-extrabold text-slate-900">{money(item.amount)}</span><StatusPill status={item.status} /></div></div>;
+  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3.5 transition hover:bg-muted/70"><div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.status === "Lunas" ? "bg-primary/10 text-primary" : "bg-amber-50 text-amber-700"}`}>{item.status === "Lunas" ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{item.period}</p><p className="mt-1 text-[11px] text-muted-foreground/70">Jatuh tempo {item.due}</p></div></div><div className="flex shrink-0 flex-col items-end gap-2"><span className="text-sm font-extrabold text-foreground">{money(item.amount)}</span><StatusPill status={item.status} /></div></div>;
 }
 
 function ServiceCard({ icon: Icon, title, description, buttonText, onClick, tone }: { icon: typeof FileText; title: string; description: string; buttonText: string; onClick: () => void; tone: "violet" | "blue" }) {
   const iconClass = tone === "violet" ? "bg-violet-50 text-violet-700" : "bg-sky-50 text-sky-700";
-  return <Card className="flex items-start gap-4"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconClass}`}><Icon size={20} /></span><div className="min-w-0 flex-1"><h3 className="font-bold text-slate-900">{title}</h3><p className="mt-1 text-sm leading-6 text-slate-500">{description}</p><button onClick={onClick} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">{buttonText}<ArrowRight size={14} /></button></div></Card>;
+  return <Card className="flex items-start gap-4"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconClass}`}><Icon size={20} /></span><div className="min-w-0 flex-1"><h3 className="font-bold text-foreground">{title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p><button onClick={onClick} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-foreground hover:border-emerald-200 hover:bg-primary/10 hover:text-primary">{buttonText}<ArrowRight size={14} /></button></div></Card>;
 }
