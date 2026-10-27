@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo,useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   Bell,
   CalendarDays,
@@ -27,6 +28,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+
 
 type Tab = "ringkasan" | "unit" | "ipl" | "komplain" | "surat";
 type Complaint = {
@@ -276,8 +278,8 @@ export default function PortalWargaPage() {
               
               <button onClick={() => setToast("Belum ada notifikasi baru pada mode demo.")} aria-label="Notifikasi" className="relative rounded-xl border border-border p-2 text-muted-foreground hover:bg-muted"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-500" /></button>
               <div className="flex items-center gap-2.5 border-l border-border pl-3 md:pl-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-extrabold text-primary">IV</div>
-                <div className="hidden sm:block"><p className="text-xs font-bold text-foreground">Irvan Verdiansyah</p><p className="text-[10px] text-muted-foreground">Blok AR.16/09</p></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-extrabold text-primary">JS</div>
+                <div className="hidden sm:block"><p className="text-xs font-bold text-foreground">John Smith</p><p className="text-[10px] text-muted-foreground">Blok AR.13/01</p></div>
               </div>
             </div>
           </header>
@@ -291,8 +293,14 @@ export default function PortalWargaPage() {
             {activeTab === "ringkasan" ? (
               <>
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-                  <div><p className="text-sm font-medium text-primary">Rabu, 21 Oktober 2026</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground md:text-3xl">Selamat datang, Irvan <span aria-hidden="true">👋</span></h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Pantau tagihan IPL, informasi unit rumah, dan layanan administrasi warga dari satu tempat.</p></div>
+                  <div><p className="text-sm font-medium text-primary">Rabu, 21 Oktober 2026</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground md:text-3xl">Selamat datang, John <span aria-hidden="true">👋</span></h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Pantau tagihan IPL, informasi unit rumah, dan layanan administrasi warga dari satu tempat.</p></div>
                   <button onClick={() => goTo("unit")} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted">Lihat unit saya <ArrowRight size={16} /></button>
+<Link
+  href="/"
+  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted"
+>
+  Kembali ke web <ArrowLeft size={16} />
+</Link>
                 </div>
 
                 <section className="relative mb-6 overflow-hidden rounded-[26px] bg-primary text-primary-foreground p-5 text-primary-foreground shadow-lg shadow-emerald-900/10 md:p-7">
@@ -320,7 +328,7 @@ export default function PortalWargaPage() {
                 </section>
 
                 <section className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
-                  <StatCard icon={Wallet} label="Tarif IPL / bulan" value={money(110000)} detail="Data simulasi unit AR-16/09" iconClass="bg-primary/10 text-primary" />
+                  <StatCard icon={Wallet} label="Tarif IPL / bulan" value={money(110000)} detail="Data simulasi unit AR-13/01" iconClass="bg-primary/10 text-primary" />
                   <StatCard icon={MessageSquareWarning} label="Komplain aktif" value={`${complaints.filter((item) => item.status !== "Selesai").length} laporan`} detail="Termasuk contoh data" iconClass="bg-violet-50 text-violet-700" />
                   </section>
 
@@ -335,7 +343,7 @@ export default function PortalWargaPage() {
                     <SectionHeading title="Unit saya" description="Informasi singkat unit" action={<button onClick={() => goTo("unit")} className="text-xs font-bold text-primary hover:opacity-80">Lihat profil</button>} />
                     <div className="flex gap-4">
                       <div className="flex h-[76px] w-[88px] shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-muted text-muted-foreground/70"><Home size={29} strokeWidth={1.4} /></div>
-                      <div className="min-w-0"><p className="font-bold text-foreground">Blok AR.16/09</p><p className="mt-1 text-sm text-muted-foreground">Irvan Verdiansyah</p><p className="mt-2 text-xs text-muted-foreground">Luas rumah <strong className="text-foreground">120 m²</strong></p><p className="mt-1 text-xs text-muted-foreground">Foto rumah belum diunggah</p></div>
+                      <div className="min-w-0"><p className="font-bold text-foreground">Blok AR.13/01</p><p className="mt-1 text-sm text-muted-foreground">John Smith</p><p className="mt-2 text-xs text-muted-foreground">Luas rumah <strong className="text-foreground">120 m²</strong></p><p className="mt-1 text-xs text-muted-foreground">Foto rumah belum diunggah</p></div>
                     </div>
                     <div className="mt-4 rounded-xl bg-muted px-4 py-3"><div className="flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">Tarif IPL bulanan</span><span className="font-extrabold text-foreground">{money(110000)}</span></div></div>
                   </Card>
@@ -363,9 +371,9 @@ export default function PortalWargaPage() {
                   <Card>
                     <div className="mb-5 flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-foreground">Profil penghuni</h3><p className="mt-1 text-sm text-muted-foreground">Data contoh untuk rancangan tampilan.</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary"><ShieldCheck size={13} className="mr-1 inline" />Terdaftar (demo)</span></div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <ProfileField label="Nama penghuni" value="Irvan Verdiansyah" />
+                      <ProfileField label="Nama penghuni" value="John Smith" />
                       <ProfileField label="Nomor HP" value="08•• •••• 1234" />
-                      <ProfileField label="Nomor blok / unit" value="Blok AR.16/09" icon={<MapPin size={15} />} />
+                      <ProfileField label="Nomor blok / unit" value="Blok AR.13/01" icon={<MapPin size={15} />} />
                       <ProfileField label="Luas rumah" value="120 m²" icon={<Ruler size={15} />} />
                       <ProfileField label="Tarif IPL bulanan" value={money(110000)} icon={<Wallet size={15} />} />
                       <ProfileField label="Status keanggotaan" value="Aktif" icon={<CheckCircle2 size={15} />} />
@@ -378,7 +386,7 @@ export default function PortalWargaPage() {
 
             {activeTab === "ipl" ? (
               <>
-                <SectionHeading title="Riwayat pembayaran IPL" description="Daftar tagihan dan status pembayaran unit AR.16/09." />
+                <SectionHeading title="Riwayat pembayaran IPL" description="Daftar tagihan dan status pembayaran unit AR.13/01." />
                 <div className="mb-5 grid gap-4 md:grid-cols-3">
                   <StatCard icon={Wallet} label="Total belum lunas" value={money(110000)} detail="3 periode" iconClass="bg-rose-50 text-rose-700" />
                   <StatCard icon={CheckCircle2} label="Sudah dibayar" value={money(paidThisYear)} detail="3 periode contoh" iconClass="bg-primary/10 text-primary" />

@@ -784,9 +784,9 @@ const groupedData = useMemo(() => {
           key={`${group.name}-${idx}`}
           className={`${
             item.header?.toString().trim().toUpperCase() === "H"
-              ? "bg-yellow-100 font-bold [&_td]:underline"
+              ? "bg-yellow-100 font-bold"
               : item.header?.toString().trim().toUpperCase() === "T"
-              ? "bg-blue-100 font-bold [&_td]:underline"
+              ? "bg-blue-100 font-bold"
               : "bg-white"
           }`}
         >
@@ -991,361 +991,290 @@ const groupedData = useMemo(() => {
                   </button>
                 </div>
 
-                {/* Tabel Mobile */}
-                <div className="max-h-[70vh] overflow-auto">
-                <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="bg-slate-100 border-b border-slate-200">
-                        <th
-                         className="sticky top-0 z-30 bg-slate-100 p-3 border-b border-slate-200"
+             {/* Tabel Mobile */}
+<div className="max-h-[70vh] overflow-auto">
+  <table className="w-full border-collapse text-left">
+    <thead>
+      <tr className="bg-slate-100 border-b border-slate-200">
+        {/* Kolom Keterangan: Sudut Kiri Atas Sticky (top-0 left-0 z-40) */}
+        <th className="sticky top-0 left-0 z-40 bg-slate-100 p-3 border-b border-slate-200 w-[150px] min-w-[150px] max-w-[170px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
+          <span className="text-xs font-semibold text-slate-700">Keterangan</span>
+        </th>
+
+        {/* Kolom Bulan Header: Sticky Top saja (z-30) */}
+        {mobileMonths.map((bulan) => (
+          <th
+            key={bulan.nama}
+            className="sticky top-0 z-30 bg-slate-100 p-3 border-b border-slate-200 text-right whitespace-nowrap text-xs font-semibold text-slate-700 min-w-[90px]"
+          >
+            {bulan.short}
+          </th>
+        ))}
+      </tr>
+    </thead>
+
+    <tbody className="divide-y divide-slate-100">
+      {dataKeuangan.length === 0 ? (
+        <tr>
+          <td
+            colSpan={1 + mobileMonths.length}
+            className="p-6 text-center text-xs text-slate-400"
+          >
+            Belum ada data detail.
+          </td>
+        </tr>
+      ) : (
+        groupedData.flatMap((group) => [
+          <tr key={`group-mobile-${group.name}`}>
+            <td
+              colSpan={1 + mobileMonths.length}
+              className="bg-slate-200 px-3 py-2.5 text-slate-800"
+            >
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 text-left text-xs font-bold sticky left-3"
+                aria-expanded={expandedGroups[group.name] ?? true}
+                onClick={() =>
+                  setExpandedGroups((prev) => ({
+                    ...prev,
+                    [group.name]: !(prev[group.name] ?? true),
+                  }))
+                }
+              >
+                <span>{(expandedGroups[group.name] ?? true) ? "▼" : "▶"}</span>
+                <span className="truncate">{group.name}</span>
+                <span className="ml-auto text-[10px] font-normal text-slate-500">
+                  {group.items.length} data
+                </span>
+              </button>
+            </td>
+          </tr>,
+          ...((expandedGroups[group.name] ?? true)
+            ? group.items.map((item, idx) => {
+                const rowBgClass =
+                  item.header?.toString().trim().toUpperCase() === "H"
+                    ? "bg-yellow-100"
+                    : item.header?.toString().trim().toUpperCase() === "T"
+                    ? "bg-blue-100"
+                    : "bg-white";
+
+                return (
+                  <tr
+                    key={`${group.name}-${idx}`}
+                    className={`${rowBgClass} hover:brightness-95 transition-all`}
+                  >
+                    {/* Kolom Keterangan: Sticky Left-0 Z-20 dengan solid background */}
+                    <td
+                      className={`sticky left-0 z-20 ${rowBgClass} px-3 py-2.5 align-top w-[150px] min-w-[150px] max-w-[170px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]`}
+                    >
+                      <div className="flex flex-col gap-1">
+                        
+                        <span
+                          className={`text-[11px] leading-4 break-words ${
+                            item.header?.toString() === "T"
+                              ? "font-bold text-slate-800"
+                              : "text-slate-700"
+                          }`}
                         >
-                          Account
-                        </th>
+                          
+                          {item.keterangan}
+                        </span>
 
-                        <th
-                         className="sticky top-0 z-30 bg-slate-100 p-3 border-b border-slate-200"
+                      </div>
+                    </td>
+
+                    {/* Kolom-kolom Bulan */}
+                    {mobileMonths.map((bulan) => (
+                      <td
+                        key={bulan.nama}
+                        className="w-1 whitespace-nowrap px-3 py-2.5 align-top text-right border-l border-slate-100/70"
+                      >
+                        <span
+                          className={`text-[11px] leading-4 ${
+                            item.header?.toString() === "T"
+                              ? "font-bold text-slate-800"
+                              : "text-slate-600"
+                          }`}
                         >
-                          Keterangan
-                        </th>
+                          {formatRupiah(item[bulan.nama])}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            : []),
+        ])
+      )}
+    </tbody>
+  </table>
+</div>
 
-                        {mobileMonths.map((bulan) => (
-                          <th
-                            key={bulan.nama}
-                          className="sticky top-0 z-20 bg-slate-100 p-3 border-b border-slate-200 whitespace-nowrap"
-                          >
-                            {bulan.short}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-slate-100">
-                      {dataKeuangan.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="
-                              p-6
-                              text-center
-                              text-xs
-                              text-slate-400
-                            "
-                          >
-                            Belum ada data detail.
-                          </td>
-                        </tr>
-                      ) : (
-                        groupedData.flatMap((group) => [
-                          <tr key={`group-mobile-${group.name}`}>
-                            <td colSpan={2 + mobileMonths.length} className="bg-slate-200 px-2 py-3 text-slate-800">
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 text-left text-xs font-bold"
-                                aria-expanded={expandedGroups[group.name] ?? true}
-                                onClick={() => setExpandedGroups((prev) => ({
-                                  ...prev,
-                                  [group.name]: !(prev[group.name] ?? true),
-                                }))}
-                              >
-                                <span>{(expandedGroups[group.name] ?? true) ? "▼" : "▶"}</span>
-                                <span>{group.name}</span>
-                                <span className="ml-auto font-normal text-slate-500">{group.items.length} data</span>
-                              </button>
-                            </td>
-                          </tr>,
-                          ...((expandedGroups[group.name] ?? true)
-                            ? group.items.map((item, idx) => (
-                          <tr
-                            key={`${group.name}-${idx}`}
-                           
-className={`
-  ${
-    item.header?.toString().trim().toUpperCase() === "H"
-      ? "bg-yellow-100 font-bold [&_td]:underline"
-      : item.header?.toString().trim().toUpperCase() === "T"
-      ? "bg-blue-100 font-bold [&_td]:underline"
-      : "bg-white"
-  }
-  hover:brightness-95
-`}
-
-                          >
-                            <td className="px-2 py-3 align-top">
-                              <span
-                                className={`
-                                  inline-block
-                                  px-1.5
-                                  py-1
-                                  rounded-full
-                                  text-[9px]
-                                  font-semibold
-                                  break-words
-                                  ${
-                                    item.header?.toString() === "T"
-                                      ? "text-slate-800"
-                                      : "text-slate-700"
-                                  }
-                                `}
-                              >
-                                {item.account}
-                              </span>
-                            </td>
-
-                            <td className="px-2 py-3 align-top">
-                              <span
-                                className={`
-                                  text-[11px]
-                                  leading-4
-                                  break-words
-                                  ${
-                                    item.header?.toString() ===
-                                    "T"
-                                      ? "font-bold text-slate-700"
-                                      : "text-slate-600"
-                                  }
-                                `}
-                              >
-                                {item.keterangan}
-                              </span>
-                            </td>
-
-                            {mobileMonths.map((bulan) => (
-                              <td
-                                key={bulan.nama}
-                                className="
-                                  px-1
-                                  py-3
-                                  align-top
-                                  text-right
-                                  border-l
-                                  border-slate-100
-                                "
-                              >
-                                <span
-                                  className={`
-                                    text-[10px]
-                                    leading-4
-                                    break-all
-                                    ${
-                                      item.header?.toString() ===
-                                      "T"
-                                        ? "font-bold text-slate-700"
-                                        : "text-slate-600"
-                                    }
-                                  `}
-                                >
-                                  {formatRupiah(
-                                    item[bulan.nama]
-                                  )}
-                                </span>
-                              </td>
-                            ))}
-                          </tr>
-                        ))
-                            : []),
-                        ])
-                      )}
-                    </tbody>
-                  </table>
-                </div>
               </div>
 
               {/* ---------------------------------------------
                   DESKTOP
                   Tetap tampil 12 bulan
               --------------------------------------------- */}
-
-              <div className="hidden md:block">
-                <div
-                  className="
-                    bg-white
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    shadow-sm
-                    overflow-hidden
-                  "
-                >
-                  <div className="max-h-[70vh] overflow-auto">
-                   <table className="w-full text-left border-collapse">
-                   <thead>
+<div className="hidden md:block">
+  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="max-h-[70vh] overflow-auto">
+      <table className="w-full text-left border-collapse">
+      <thead>
   <tr className="text-sm font-semibold text-slate-700">
-    <th className="sticky top-0 z-30 bg-slate-100 border-b border-slate-200 p-4 text-left">
+    {/* Kolom 1 Header: left-0, z-50 */}
+    <th className="sticky top-0 left-0 z-50 bg-slate-100 border-b border-slate-200 p-4 text-left w-[140px] min-w-[140px]">
       Account
     </th>
 
-    <th className="sticky top-0 z-30 bg-slate-100 border-b border-slate-200 p-4 text-left">
+    {/* Kolom 2 Header: left-[140px], z-50, shadow pemisah */}
+    <th className="sticky top-0 left-[140px] z-50 bg-slate-100 border-b border-slate-200 p-4 text-left w-[240px] min-w-[240px] max-w-[240px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.1)]">
       Keterangan
     </th>
 
+    {/* Kolom Bulan: sticky top biasa, z-30 */}
     {selectedBulan === "all" ? (
       listPilihanBulan.map((bulan) => (
         <th
           key={bulan.nama}
-          className="sticky top-0 z-20 bg-slate-100 border-b border-slate-200 p-3 text-right whitespace-nowrap"
+          className="sticky top-0 z-30 bg-slate-100 border-b border-slate-200 p-3 text-right whitespace-nowrap min-w-[100px]"
         >
           {bulan.nama.toUpperCase()}
         </th>
       ))
     ) : (
-      <th className="sticky top-0 z-20 bg-blue-50 border-b border-slate-200 p-3 text-right whitespace-nowrap">
+      <th className="sticky top-0 z-30 bg-blue-50 border-b border-slate-200 p-3 text-right whitespace-nowrap min-w-[120px]">
         {selectedBulan.toUpperCase()}
       </th>
     )}
   </tr>
 </thead>
 
-                      <tbody
-                        className="
-                          divide-y
-                          divide-slate-100
-                          text-sm
-                          text-slate-600
-                        "
-                      >
-                        {dataKeuangan.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={
-                                selectedBulan === "all"
-                                  ? 14
-                                  : 3
-                              }
-                              className="
-                                p-6
-                                text-center
-                                text-slate-400
-                              "
-                            >
-                              Belum ada data detail.
-                            </td>
-                          </tr>
-                        ) : (
-                          groupedData.flatMap((group) => [
-                            <tr key={`group-desktop-${group.name}`}>
-                              <td colSpan={selectedBulan === "all" ? 14 : 3} className="bg-slate-200 px-4 py-3 text-slate-800">
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center gap-2 text-left font-bold"
-                                  aria-expanded={expandedGroups[group.name] ?? true}
-                                  onClick={() => setExpandedGroups((prev) => ({
-                                    ...prev,
-                                    [group.name]: !(prev[group.name] ?? true),
-                                  }))}
-                                >
-                                  <span>{(expandedGroups[group.name] ?? true) ? "▼" : "▶"}</span>
-                                  <span>{group.name}</span>
-                                  <span className="ml-auto text-xs font-normal text-slate-500">{group.items.length} data</span>
-                                </button>
-                              </td>
-                            </tr>,
-                            ...((expandedGroups[group.name] ?? true)
-                              ? group.items.map((item, idx) => (
-                            <tr
-                              key={`${group.name}-${idx}`}
-                             
-className={`
-  ${
-    item.header?.toString().trim().toUpperCase() === "H"
-      ? "bg-yellow-100 font-bold [&_td]:underline"
-      : item.header?.toString().trim().toUpperCase() === "T"
-      ? "bg-blue-100 font-bold [&_td]:underline"
-      : "bg-white"
-  }
-  hover:brightness-95
-`}
+        <tbody className="divide-y divide-slate-100 text-sm text-slate-600">
+          {dataKeuangan.length === 0 ? (
+            <tr>
+              <td
+                colSpan={selectedBulan === "all" ? 14 : 3}
+                className="p-6 text-center text-slate-400"
+              >
+                Belum ada data detail.
+              </td>
+            </tr>
+          ) : (
+            groupedData.flatMap((group) => [
+              <tr key={`group-desktop-${group.name}`}>
+                <td
+                  colSpan={selectedBulan === "all" ? 14 : 3}
+                  className="bg-slate-200 px-4 py-3 text-slate-800"
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 text-left font-bold sticky left-4"
+                    aria-expanded={expandedGroups[group.name] ?? true}
+                    onClick={() =>
+                      setExpandedGroups((prev) => ({
+                        ...prev,
+                        [group.name]: !(prev[group.name] ?? true),
+                      }))
+                    }
+                  >
+                    <span>{(expandedGroups[group.name] ?? true) ? "▼" : "▶"}</span>
+                    <span>{group.name}</span>
+                    <span className="ml-auto text-xs font-normal text-slate-500">
+                      {group.items.length} data
+                    </span>
+                  </button>
+                </td>
+              </tr>,
+              ...((expandedGroups[group.name] ?? true)
+                ? group.items.map((item, idx) => {
+                    // Tentukan warna latar baris agar konsisten di kolom sticky
+                   // Di dalam map group.items:
+const rowBgClass =
+item.header?.toString().trim().toUpperCase() === "H"
+  ? "bg-yellow-100"
+  : item.header?.toString().trim().toUpperCase() === "T"
+  ? "bg-blue-100"
+  : "bg-white";
 
-                            >
-                              <td className="p-4 align-top">
-                                <span
-                                  className={`
-                                    px-2.5
-                                    py-1
-                                    rounded-full
-                                    text-xs
-                                    font-semibold
-                                    ${
-                                      item.header?.toString() === "T"
-                                      ? "text-slate-800"
-                                      : "text-slate-700"
-                                    }
-                                  `}
-                                >
-                                  {item.account}
-                                </span>
-                              </td>
+return (
+<tr
+  key={`${group.name}-${idx}`}
+  className={`${rowBgClass} hover:brightness-95 transition-all`}
+>
+  {/* Kolom 1 Body: sticky left-0, z-20 */}
+  <td
+    className={`sticky left-0 z-20 ${rowBgClass} p-4 align-top w-[140px] min-w-[140px]`}
+  >
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+        item.header?.toString() === "T"
+          ? "text-slate-800"
+          : "text-slate-700"
+      }`}
+    >
+      {item.account}
+    </span>
+  </td>
 
-                              <td className="p-4 align-top">
-                                <span
-                                  className={`
-                                    ${
-                                      item.header?.toString() ===
-                                      "T"
-                                        ? "font-bold"
-                                        : ""
-                                    }
-                                  `}
-                                >
-                                  {item.keterangan}
-                                </span>
-                              </td>
+  {/* Kolom 2 Body: sticky left-[140px], z-20, word-wrap, shadow pemisah */}
+  <td
+    className={`sticky left-[140px] z-20 ${rowBgClass} p-4 align-top w-[240px] min-w-[240px] max-w-[240px] shadow-[3px_0_5px_-2px_rgba(0,0,0,0.1)]`}
+  >
+    <span
+      className={`
+        inline-block
+        break-words
+        leading-relaxed
+        ${item.header?.toString() === "T" ? "font-bold text-slate-800" : ""}
+      `}
+    >
+      {item.keterangan}
+    </span>
+  </td>
 
-                              {selectedBulan === "all" ? (
-                                listPilihanBulan.map(
-                                  (bulan) => (
-                                    <td
-                                      key={bulan.nama}
-                                      className="
-                                        p-3
-                                        border-r
-                                        border-slate-50
-                                        text-right
-                                        whitespace-nowrap
-                                      "
-                                    >
-                                      <span
-                                        className={`
-                                          text-xs
-                                          ${
-                                            item.header?.toString() ===
-                                            "T"
-                                              ? "font-bold text-slate-700"
-                                              : "text-slate-600"
-                                          }
-                                        `}
-                                      >
-                                        {formatRupiah(
-                                          item[bulan.nama]
-                                        )}
-                                      </span>
-                                    </td>
-                                  )
-                                )
-                              ) : (
-                                <td
-                                  className="
-                                    p-3
-                                    bg-blue-50/20
-                                    text-slate-900
-                                    text-sm
-                                    text-right
-                                  "
-                                >
-                                  {formatRupiah(
-                                    item[selectedBulan]
-                                  )}
-                                </td>
-                              )}
-                            </tr>
-                          ))
-                              : []),
-                          ])
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+  {/* Kolom data bulan tetap biasa (tidak sticky) */}
+  {selectedBulan === "all" ? (
+    listPilihanBulan.map((bulan) => (
+      <td
+        key={bulan.nama}
+        className="px-3 py-4 align-top text-right whitespace-nowrap border-l border-slate-100/60"
+      >
+        <span
+          className={`text-[12px] leading-4 ${
+            item.header?.toString() === "T"
+              ? "font-bold text-slate-700"
+              : "text-slate-600"
+          }`}
+        >
+          {formatRupiah(item[bulan.nama])}
+        </span>
+      </td>
+    ))
+  ) : (
+    <td className="px-3 py-4 align-top text-right whitespace-nowrap border-l border-slate-100/60">
+      <span
+        className={`text-[12px] leading-4 ${
+          item.header?.toString() === "T"
+            ? "font-bold text-slate-700"
+            : "text-slate-600"
+        }`}
+      >
+        {formatRupiah(item[selectedBulan])}
+      </span>
+    </td>
+  )}
+</tr>
+);
+                  })
+                : []),
+            ])
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
             </>
           )}
 

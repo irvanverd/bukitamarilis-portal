@@ -30,7 +30,7 @@ export default function HomePage() {
 
       {/* STATISTIK */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card title="Jumlah KK" value="124" color="bg-blue-50" emoji="👫"  />
+        <Card title="Jumlah KK" value="300" color="bg-blue-50" emoji="👫"  />
         <Card title="Jumlah Warga" value="300" color="bg-green-50" emoji="👤"  />
         <Card title="Kegiatan Bulan Ini" value="0" color="bg-yellow-50" emoji="📆"  />
         <Card title="Pengumuman Aktif" value="1" color="bg-red-50" emoji="📢"  />
@@ -45,8 +45,8 @@ export default function HomePage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <MenuCard
-  title="Portal Warga"
-  desc="Tagihan IPL, Info Unit dan Pelayanan Warga"
+  title="Portal Warga*"
+  desc="Tagihan IPL, Info Unit dan Pelayanan Warga (*Demo)"
   href="/portal-warga"
   emoji="🏠"
 />
@@ -54,7 +54,7 @@ export default function HomePage() {
           <MenuCard title="Kegiatan" desc="Agenda dan dokumentasi" href="/kegiatan" emoji="🎉" />
           <MenuCard title="Pengurus" desc="Susunan pengurus RT" href="/pengurus" emoji="👨🏻‍🎓" />
           <MenuCard title="Nomor Telepon Penting" desc="Kontak darurat dan layanan penting" href="/nomor-telepon-penting" emoji="☎️" />
-          <MenuCard title="CCTV Cluster" desc="Pratinjau kamera area lingkungan (demo)" href="/cctv" emoji="📹" />
+          <MenuCard title="CCTV Cluster" desc="CCTV area Cluster (belum tersedia)" href="/cctv" emoji="📹" />
       
         </div>
       </section>
@@ -74,9 +74,9 @@ export default function HomePage() {
           <h2 className="text-xl font-bold mb-4">Agenda Mendatang</h2>
 
           <div className="space-y-4">
-            <AgendaItem date="27 Juni" title="Kerja Bakti Lokasi : Lapangan Multifungsi" />
-            <AgendaItem date="18 Oktober 2026" title="Rapat Pengurus" />
-            <AgendaItem date="25 Oktober 2026" title="Rapat Warga" />
+            <AgendaItem date="27 Juni 2026" title="Kerja Bakti Lokasi : Lapangan Multifungsi" />
+            <AgendaItem date="18 Okt 2026" title="Rapat Pengurus" />
+            <AgendaItem date="25 Okt 2026" title="Rapat Warga" />
           </div>
         </div>
       </section>

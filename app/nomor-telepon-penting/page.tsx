@@ -1,177 +1,266 @@
-import Link from "next/link";
-import {
-  Ambulance,
-  ArrowLeft,
-  Building2,
-  Flame,
-  Headset,
-  Hospital,
-  Phone,
-  ShieldAlert,
-  Siren,
-} from "lucide-react";
+"use client";
 
-export const metadata = {
-  title: "Nomor Telepon Penting",
-  description: "Daftar kontak darurat dan layanan penting untuk warga Bukit Amarilis.",
-};
+import React, { useState } from "react";
 
-type Contact = {
-  name: string;
-  category: string;
-  number: string;
-  href?: string;
-  note: string;
-  icon: typeof Phone;
-  priority?: boolean;
-};
+interface KontakItem {
+  nama: string;
+  nomor: string[];
+  keterangan?: string;
+}
 
-const contacts: Contact[] = [
+interface KategoriKontak {
+  kategori: string;
+  daftar: KontakItem[];
+}
+
+const dataKontakPenting: KategoriKontak[] = [
   {
-    name: "Pos Security Bukit Amarilis",
-    category: "Keamanan lingkungan",
-    number: "021-xxxxxx",
-    note: "Nomor resmi pos security.",
-    icon: Headset,
+    kategori: "🚨 Darurat & Keamanan",
+    daftar: [
+      { nama: "Hallo Amarilis", nomor: ["6285810761663"] }, 
+      { nama: "Pak Yaman Security Bukit Amarilis", nomor: ["08561469841"] }, 
+      { nama: "Keamanan & Patroli Pusat CI", nomor: ["021-89930754"] },
+      { nama: "Humas CI City (Bp. Dul Gafar)", nomor: ["081383383839"] },
+      { nama: "Pemadam Kebakaran", nomor: ["021-88957805"] },
+      { nama: "Polsek Jonggol", nomor: ["021-89931174"] },
+      { nama: "Mobil Patroli Polsek Jonggol", nomor: ["085814229428"] },
+      { nama: "Polsek Cileungsi", nomor: ["021-8230861"] },
+    ],
   },
   {
-    name: "Bogor Siaga — Panggilan Darurat",
-    category: "Darurat terpadu Kabupaten Bogor",
-    number: "112",
-    href: "tel:112",
-    note: "Layanan darurat terpadu Kabupaten Bogor.",
-    icon: Siren,
-    priority: true,
+    kategori: "🏢 Pengelola & Utilitas Publik",
+    daftar: [
+      {
+        nama: "Kantor Pemasaran & Purna Jual CI",
+        nomor: ["021-35930808", "021-89930808", "021-89930606"],
+      },
+      { nama: "PDAM Citra Indah", nomor: ["021-89930557"] },
+      { nama: "PDAM Cileungsi", nomor: ["021-823262"] },
+      { nama: "PDAM Cibinong", nomor: ["021-87915270"] },
+      { nama: "PLN Gangguan", nomor: ["021-8230391"] },
+      {
+        nama: "PLN UPJ Jonggol",
+        nomor: ["021-89931531", "021-89930273", "021-89930275"],
+        keterangan: "Jl. Letkol Murlin",
+      },
+      {
+        nama: "PLN UPJ Cileungsi",
+        nomor: ["021-8236513"],
+        keterangan: "Jl. Camat Enjam No. 13",
+      },
+      { nama: "Informasi Telkom", nomor: ["021-8230000", "021-8230100"] },
+    ],
   },
   {
-    name: "Polisi / Polsek Jonggol",
-    category: "Kepolisian",
-    number: "110",
-    href: "tel:110",
-    note: "Call Center Polri untuk laporan dan bantuan kepolisian.",
-    icon: ShieldAlert,
+    kategori: "🚐 Transportasi Kawasan & Feeder Bus",
+    daftar: [
+      { nama: "Mobil Kawasan 1", nomor: ["0822-1386-5354"] },
+      { nama: "Mobil Kawasan 2", nomor: ["0818-0299-5653"] },
+      { nama: "Mobil Kawasan 3", nomor: ["0899-9599-493"] },
+      { nama: "Mobil Kawasan 4", nomor: ["0812-8839-6239"] },
+      { nama: "Driver Feeder - Pak Salim", nomor: ["087770675661"] },
+      { nama: "Driver Feeder - Pak Slamet", nomor: ["0878-xxxx-xxxx"] },
+    ],
   },
   {
-    name: "Pemadam Kebakaran Kabupaten Bogor",
-    category: "Mako Pusat Cibinong",
-    number: "(021) 8753-547",
-    href: "tel:+62218753547",
-    note: "Kontak Mako Pusat Damkar Kabupaten Bogor; untuk keadaan darurat juga dapat mencoba 112 atau 113.",
-    icon: Flame,
+    kategori: "🔧 Jasa & Perbaikan Rumah",
+    daftar: [
+      {
+        nama: "Service AC - Pak Ruswandi",
+        nomor: ["081310232405"],
+        keterangan: "Cluster Mahoni",
+      },
+      { nama: "Service AC - Mas Levy", nomor: ["089640032903"] },
+      {
+        nama: "Service AC - Pak Ucok",
+        nomor: ["081294762887"],
+        keterangan: "Cluster Heliconia",
+      },
+      {
+        nama: "Service AC - Aliong (AccTeknik)",
+        nomor: ["081511462220"],
+        keterangan: "BBM: 23676B48",
+      },
+      { nama: "Tukang Listrik - Pak Seon", nomor: ["081316910748", "087873053102"] },
+      { nama: "Tukang Listrik - Pak Herman", nomor: ["085715171254"] },
+      {
+        nama: "Service TV - Bpk Choiri",
+        nomor: ["081381016017"],
+        keterangan: "Cluster Akasia",
+      },
+      {
+        nama: "Service TV - Bpk Dewa",
+        nomor: ["08170109499"],
+        keterangan: "Cluster Cempaka",
+      },
+      { nama: "Service TV - Pak Puji", nomor: ["08121929888"] },
+      { nama: "Bor Air - Stevhen Kontruksi", nomor: ["081399571737"] },
+      { nama: "Bor Air - Pak Sa'i", nomor: ["085215478117"] },
+      { nama: "Bor Air - Toro Bor", nomor: ["081337500503"] },
+      { nama: "Bor Air - Pak Muhadi", nomor: ["08158859378"] },
+      { nama: "Sedot WC / Mampet", nomor: ["021-91793222", "081291579091"] },
+      { nama: "Tukang Taman - W Ade & Saeful", nomor: ["081311315131"] },
+    ],
   },
   {
-    name: "RSUD Cileungsi — Informasi",
-    category: "Rumah sakit",
-    number: "(021) 8993-4667",
-    href: "tel:+622189934667",
-    note: "Nomor kontak yang tercantum pada halaman kontak RSUD Cileungsi.",
-    icon: Hospital,
+    kategori: "💆 Pijat & Kesehatan Tradisional",
+    daftar: [
+      {
+        nama: "Mamah Said / Christine Leo",
+        nomor: ["087874350361", "082113052855"],
+        keterangan: "Pijat Bayi, Wanita & Anak",
+      },
+      {
+        nama: "Mbak Yanti",
+        nomor: ["081370753150"],
+        keterangan: "Graha Kartika (Bayi, Wanita, Anak)",
+      },
+      {
+        nama: "Pak Tubagus",
+        nomor: ["021-51199612"],
+        keterangan: "Bukit Akasia (Bayi & Anak 09.00-12.00)",
+      },
+      {
+        nama: "Ibu Maemunah",
+        nomor: ["081299185882"],
+        keterangan: "Cluster Azalea (Pijat Bayi)",
+      },
+    ],
   },
   {
-    name: "RSUD Cileungsi — IGD",
-    category: "Instalasi Gawat Darurat",
-    number: "(021) 8993-4668",
-    href: "tel:+622189934668",
-    note: "Telepon IGD. Jika membutuhkan bantuan medis darurat, 119 juga dapat dicoba.",
-    icon: Ambulance,
-    priority: true,
+    kategori: "🏫 Pendidikan / Sekolah",
+    daftar: [
+      { nama: "TK Islam Cikal Harapan", nomor: ["021-29096307"] },
+      { nama: "TK Al-Idzhar 2", nomor: ["021-89940470"] },
+      { nama: "SD Islam Cikal Harapan", nomor: ["021-29096309"] },
+      { nama: "SD Muhammadiyah 4 Jonggol", nomor: ["085710779577"] },
+      { nama: "SMPN 2 Citra Indah", nomor: ["021-89930925"] },
+    ],
   },
+
   {
-    name: "RS Permata Jonggol",
-    category: "Rumah sakit",
-    number: "(021) 89931222",
-    href: "tel:+6289931222",
-    note: "Kontak rumah sakit Swasta di daerah Kecamatan Jonggol.",
-    icon: Building2,
-  },
-  {
-    name: "Ambulans / Darurat Medis",
-    category: "Layanan kesehatan nasional",
-    number: "119",
-    href: "tel:119",
-    note: "Nomor layanan kegawatdaruratan kesehatan.",
-    icon: Ambulance,
-    priority: true,
-  },
-  {
-    name: "Ambulans Masjid Nuroh AlDuwaihi",
-    category: "Layanan Ambulan Gratis untuk seluruh warga Bukit Amarilis",
-    number: "+6285716889514",
-    href: "tel:+6285716889514",
-    note: "Nomor layanan kegawatdaruratan kesehatan.",
-    icon: Ambulance,
-    priority: true,
+    kategori: "🏫 Rumah sakit / Klinik",
+    daftar: [
+      { nama: "RSUD Cileungsi — Informasi", nomor: ["(021) 8993-4668"] },
+      { nama: "RS Permata Jonggol", nomor: ["(021) 89931222"] },
+      { nama: "Ambulans / Darurat Medis", nomor: ["119"] },
+      { nama: "Ambulans Masjid Nuroh AlDuwaihi", nomor: ["6285716889514"] },
+    
+    ],
   },
 ];
 
-function ContactCard({ contact }: { contact: Contact }) {
-  const Icon = contact.icon;
+export default function KontakPentingPage() {
+  const [pencarian, setPencarian] = useState("");
+
+  const filteredData = dataKontakPenting
+    .map((kat) => ({
+      ...kat,
+      daftar: kat.daftar.filter(
+        (item) =>
+          item.nama.toLowerCase().includes(pencarian.toLowerCase()) ||
+          (item.keterangan &&
+            item.keterangan.toLowerCase().includes(pencarian.toLowerCase())) ||
+          item.nomor.some((n) => n.includes(pencarian))
+      ),
+    }))
+    .filter((kat) => kat.daftar.length > 0);
+
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-colors duration-300">
-      <div className="flex items-start gap-3">
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${contact.priority ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-          <Icon size={21} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{contact.category}</p>
-          <h2 className="mt-1 font-bold leading-snug">{contact.name}</h2>
+    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+      {/* Header Halaman */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+            Daftar Nomor Telepon Penting
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Kawasan Citra Indah City & Sekitarnya
+          </p>
+        </div>
+
+        {/* Input Pencarian Cepat */}
+        <div className="w-full sm:w-72">
+          <input
+            type="text"
+            placeholder="Cari kontak, jasa, nomor..."
+            value={pencarian}
+            onChange={(e) => setPencarian(e.target.value)}
+            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+          />
         </div>
       </div>
-      <p className="mt-4 text-2xl font-extrabold tracking-tight">{contact.number}</p>
-      <p className="mt-2 flex-1 text-xs leading-5 text-muted-foreground">{contact.note}</p>
-      {contact.href ? (
-        <a href={contact.href} className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90">
-          <Phone size={16} /> Hubungi nomor
-        </a>
-      ) : (
-        <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
-          Perlu nomor resmi
+
+      {/* Tabel Utama Berdasarkan Kategori */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="max-h-[75vh] overflow-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <th className="sticky top-0 z-30 bg-slate-100 p-3.5 w-1/3 min-w-[180px]">
+                  Nama / Layanan
+                </th>
+                <th className="sticky top-0 z-30 bg-slate-100 p-3.5 min-w-[200px]">
+                  Nomor Telepon
+                </th>
+                <th className="sticky top-0 z-30 bg-slate-100 p-3.5 w-1/3 min-w-[160px]">
+                  Keterangan / Lokasi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm">
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="p-8 text-center text-slate-400">
+                    Tidak ditemukan kontak yang cocok dengan kata kunci &quot;{pencarian}&quot;.
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((kat) => (
+                  <React.Fragment key={kat.kategori}>
+                    {/* Header Grup Kategori */}
+                    <tr className="bg-slate-50/90 border-t border-b border-slate-200/80">
+                      <td
+                        colSpan={3}
+                        className="px-4 py-2 text-xs font-bold text-slate-700 tracking-wide uppercase"
+                      >
+                        {kat.kategori}
+                      </td>
+                    </tr>
+
+                    {/* Data Perorangan / Instansi */}
+                    {kat.daftar.map((item, idx) => (
+                      <tr
+                        key={`${kat.kategori}-${idx}`}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
+                        <td className="p-3.5 font-medium text-slate-800 align-top">
+                          {item.nama}
+                        </td>
+                        <td className="p-3.5 align-top">
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.nomor.map((no, noIdx) => (
+                              <a
+                                key={noIdx}
+                                href={`tel:${no.replace(/[^0-9]/g, "")}`}
+                                className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold tracking-wide border border-blue-200 transition-colors"
+                              >
+                                📞 {no}
+                              </a>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-slate-500 text-xs leading-relaxed align-top">
+                          {item.keterangan || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
-    </article>
-  );
-}
-
-export default function NomorTeleponPentingPage() {
-  return (
-    <div className="min-h-[70vh] bg-background text-foreground transition-colors duration-300">
-      <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
-        <Link href="/" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-primary">
-          <ArrowLeft size={16} /> Kembali ke halaman utama
-        </Link>
-
-        <section className="mb-7 overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground shadow-sm sm:p-8">
-          <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
-              <Phone size={25} />
-            </span>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] opacity-80">Layanan warga</p>
-              <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Nomor Telepon Penting</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 opacity-85">Kontak darurat dan fasilitas layanan yang dapat dihubungi warga Bukit Amarilis.</p>
-            </div>
-          </div>
-        </section>
-
-        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-          <ShieldAlert className="mt-0.5 shrink-0" size={19} />
-          <p><strong>Catatan:</strong> nomor security masih berupa placeholder. Nomor layanan luar cluster diisi secara tetap berdasarkan publikasi yang tersedia, tetapi sebaiknya diverifikasi kembali sebelum diumumkan. Gunakan nomor darurat hanya untuk keadaan yang sesuai.</p>
-        </div>
-
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {contacts.map((contact) => <ContactCard key={contact.name} contact={contact} />)}
-        </section>
-
-        <section className="mt-7 rounded-2xl border border-border bg-card p-5 text-xs leading-5 text-muted-foreground">
-          <h2 className="mb-2 font-bold text-card-foreground">Sumber referensi nomor</h2>
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <a className="underline decoration-current/30 underline-offset-4 hover:text-primary" href="https://siaga112.bogorkab.go.id/first-responder" target="_blank" rel="noreferrer">Bogor Siaga 112</a>
-            <a className="underline decoration-current/30 underline-offset-4 hover:text-primary" href="https://polri.go.id/kontak/call-center-110" target="_blank" rel="noreferrer">Call Center Polri 110</a>
-            <a className="underline decoration-current/30 underline-offset-4 hover:text-primary" href="https://damkar.bogorkab.go.id/" target="_blank" rel="noreferrer">Damkar Kabupaten Bogor</a>
-            <a className="underline decoration-current/30 underline-offset-4 hover:text-primary" href="https://rsudrhsatibi.bogorkab.go.id/kontak-kami/" target="_blank" rel="noreferrer">Kontak RSUD Cileungsi</a>
-            <a className="underline decoration-current/30 underline-offset-4 hover:text-primary" href="https://sirs.kemkes.go.id/fo/home/profile_rs/3201207" target="_blank" rel="noreferrer">Data RS Kemenkes</a>
-          </div>
-        </section>
       </div>
     </div>
   );
