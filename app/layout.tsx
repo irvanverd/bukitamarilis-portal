@@ -74,8 +74,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Portal Warga RT 07 RW 14 Bukit Amarilis",
-    description: "Portal resmi RT 07 RW 14 Bukit Amarilis",
-    images: ["https://www.myamarilis.id/og-image.png"],
+    description: "Sistem informasi, transparansi keuangan, dan agenda warga RT 007 / RW XIV Bukit Amarilis, Jonggol.",
+    images: ["https://www.myamarilis.id/og-image.jpg"],
   },
 
   manifest: "/manifest.webmanifest",
