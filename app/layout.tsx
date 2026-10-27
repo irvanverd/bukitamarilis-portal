@@ -1,33 +1,11 @@
-import type { Metadata } from "next";
+import "./globals.css";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  // Judul tebal yang muncul di WhatsApp
-  title: "Portal Warga RT 07/XIV Bukit Amarilis",
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-  // Teks deskripsi di bawah judul
-  description:
-    "Sistem informasi, transparansi keuangan, dan agenda warga RT 007 / RW XIV Bukit Amarilis, Jonggol.",
-
-  // Konfigurasi Open Graph untuk WhatsApp, Facebook, Telegram, dll
-  openGraph: {
-    title: "Portal Warga RT 07/XIV Bukit Amarilis",
-    description:
-      "Sistem informasi, transparansi keuangan, dan agenda warga RT 007 / RW XIV Bukit Amarilis, Jonggol.",
-    url: "https://myamarilis.id",
-    siteName: "MyAmarilis",
-    images: [
-      {
-        // WAJIB URL absolut lengkap (bukan hanya '/og-image.jpg')
-        url: "https://myamarilis.id/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Logo RT 07/XIV Bukit Amarilis",
-      },
-    ],
-    locale: "id_ID",
-    type: "website",
-  },
-};
 
 export default function RootLayout({
   children,
@@ -35,8 +13,83 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body>{children}</body>
+    <html lang="id" className={cn("font-sans", geist.variable)}>
+      <body className="bg-slate-50">
+        <Navbar />
+
+        <main>{children}</main>
+
+        <Footer />
+      </body>
     </html>
   );
 }
+
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://www.myamarilis.id"),
+
+  title: {
+    default: "Portal Warga RT 07 RW 14 Bukit Amarilis",
+    template: "%s | Portal Bukit Amarilis",
+  },
+
+  description:
+    "Portal resmi RT 07 RW 14 Bukit Amarilis. Transparansi keuangan, kegiatan warga, pengumuman, dan layanan digital.",
+
+  keywords: [
+    "RT 07",
+    "RW 14",
+    "Bukit Amarilis",
+    "Portal Warga",
+    "Citra Indah City",
+    "Jonggol",
+    "Bogor",
+  ],
+
+  openGraph: {
+    title: "Web Portal RT 07 RW 014 Bukit Amarilis",
+    description:
+      "Website system informasi digital resmi RT 07 RW 14 Bukit Amarilis.",
+
+    url: "https://www.myamarilis.id",
+
+    siteName: "Web Portal RT 07 RW 014 Bukit Amarilis",
+
+    locale: "id_ID",
+
+    type: "website",
+
+    images: [
+      {
+        url: "https://www.myamarilis.id/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Portal Warga RT 07 RW 14 Bukit Amarilis",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Portal Warga RT 07 RW 14 Bukit Amarilis",
+    description: "Portal resmi RT 07 RW 14 Bukit Amarilis",
+    images: ["https://www.myamarilis.id/og-image.png"],
+  },
+
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MyAmarilis",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+};
