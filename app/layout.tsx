@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -25,71 +26,31 @@ export default function RootLayout({
   );
 }
 
-import type { Metadata } from "next";
-
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.myamarilis.id"),
+  // Judul tebal yang muncul di WhatsApp
+  title: "Portal Warga RT 07/XIV Bukit Amarilis",
 
-  title: {
-    default: "Portal Warga RT 07 RW 14 Bukit Amarilis",
-    template: "%s | Portal Bukit Amarilis",
-  },
-
+  // Teks deskripsi di bawah judul
   description:
-    "Portal resmi RT 07 RW 14 Bukit Amarilis. Transparansi keuangan, kegiatan warga, pengumuman, dan layanan digital.",
+    "Sistem informasi, transparansi keuangan, dan agenda warga RT 007 / RW XIV Bukit Amarilis.",
 
-  keywords: [
-    "RT 07",
-    "RW 14",
-    "Bukit Amarilis",
-    "Portal Warga",
-    "Citra Indah City",
-    "Jonggol",
-    "Bogor",
-  ],
-
+  // Konfigurasi Open Graph untuk WhatsApp, Facebook, Telegram, dll
   openGraph: {
-    title: "Web Portal RT 07 RW 014 Bukit Amarilis",
+    title: "Portal Warga RT 07/XIV Bukit Amarilis",
     description:
-      "Website system informasi digital resmi RT 07 RW 14 Bukit Amarilis.",
-
-    url: "https://www.myamarilis.id",
-
-    siteName: "Web Portal RT 07 RW 014 Bukit Amarilis",
-
-    locale: "id_ID",
-
-    type: "website",
-
+      "Sistem informasi, transparansi keuangan, dan agenda warga RT 007 / RW XIV Bukit Amarilis.",
+    url: "https://myamarilis.id",
+    siteName: "MyAmarilis",
     images: [
       {
-        url: "https://www.myamarilis.id/og-image.png",
+        // WAJIB URL absolut lengkap (bukan hanya '/og-image.jpg')
+        url: "https://myamarilis.id/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Portal Warga RT 07 RW 14 Bukit Amarilis",
+        alt: "Logo RT 07/XIV Bukit Amarilis",
       },
     ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Portal Warga RT 07 RW 14 Bukit Amarilis",
-    description: "Sistem informasi, transparansi keuangan, dan agenda warga RT 007 / RW XIV Bukit Amarilis, Jonggol.",
-    images: ["https://www.myamarilis.id/og-image.jpg"],
-  },
-
-  manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "MyAmarilis",
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: "/apple-touch-icon.png",
+    locale: "id_ID",
+    type: "website",
   },
 };

@@ -6,12 +6,11 @@ export default function HomePage() {
   return (
 
     <div className="space-y-6">
-    {/* HERO DENGAN BACKGROUND IMAGE */}
-    <section 
-      className="relative rounded-2xl bg-cover bg-center p-5 md:p-6 text-white shadow-md overflow-hidden"
-      style={{ backgroundImage: `url('https://i.ibb.co.com/F4x5fHKJ/Logo-Banner-Amarilis.png')` }}
-     
-    >
+
+{/* HERO DENGAN BACKGROUND IMAGE */}
+<section 
+  className="relative rounded-2xl bg-cover bg-center p-5 md:p-6 text-white shadow-md overflow-hidden bg-[url('/Logo-Banner.png')]"
+>
       {/* Lapisan Gelap (Overlay) agar teks tetap mudah dibaca */}
       <div className="absolute inset-0 bg-black/40 z-0" />
 
