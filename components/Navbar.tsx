@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useTransition } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Download, Smartphone } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
+
+// Tipe interface untuk event PWA
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
 
 const UNDER_CONSTRUCTION = false;
 
@@ -23,29 +29,48 @@ export default function Navbar() {
   const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
 
+  // State untuk Install PWA Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
   const isNavigating = loading || isPending;
 
-  // Reset status loading dan tutup menu mobile setiap kali rute/halaman berubah
   useEffect(() => {
     setLoading(false);
     setOpen(false);
   }, [pathname]);
 
-  // Efek CSS untuk mengubah kursor menjadi spinner/wait di seluruh halaman
+  // Tangkap event sebelum instalasi dari browser
   useEffect(() => {
-    if (isNavigating) {
-      document.body.classList.add("cursor-wait");
-      document.body.style.pointerEvents = "none";
-    } else {
-      document.body.classList.remove("cursor-wait");
-      document.body.style.pointerEvents = "auto";
-    }
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // Tampilkan banner instalasi secara otomatis
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
 
     return () => {
-      document.body.classList.remove("cursor-wait");
-      document.body.style.pointerEvents = "auto";
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
     };
-  }, [isNavigating]);
+  }, []);
+
+  // Handler eksekusi install
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      alert("Aplikasi sudah terpasang atau gunakan opsi 'Tambahkan ke Layar Utama' pada menu browser Anda.");
+      return;
+    }
+
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === "accepted") {
+      setShowInstallBanner(false);
+      setDeferredPrompt(null);
+    }
+  };
 
   const getHref = (targetHref: string) => {
     return UNDER_CONSTRUCTION ? "/daftar-lomba" : targetHref;
@@ -55,7 +80,6 @@ export default function Navbar() {
     const finalHref = getHref(targetHref);
     setOpen(false);
 
-    // Abaikan transisi jika mengklik menu rute saat ini
     if (pathname === finalHref) return;
 
     setLoading(true);
@@ -64,12 +88,51 @@ export default function Navbar() {
     });
   };
 
-  // Sembunyikan navbar jika berada di portal warga
   if (pathname.startsWith("/portal-warga")) return null;
 
   return (
     <>
-      {/* Indikator Loading Bar Halus di Bagian Paling Atas Layar */}
+      {/* 1. POP-UP / BANNER INSTALL APPS (Atas Navbar) */}
+      {showInstallBanner && (
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2.5 shadow-md">
+          <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <Smartphone size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-semibold">
+                  Pasang Aplikasi MyAmarilis
+                </p>
+                <p className="text-[11px] text-blue-100 hidden sm:block">
+                  Akses portal warga lebih cepat langsung dari layar utama HP Anda.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+              >
+                <Download size={14} />
+                Install
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInstallBanner(false)}
+                className="p-1 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-colors"
+                aria-label="Tutup banner"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Indikator Loading Bar */}
       {isNavigating && (
         <div className="fixed top-0 left-0 right-0 h-[2.5px] z-[9999] overflow-hidden bg-primary/20">
           <div className="h-full bg-[var(--primary)] w-full animate-pulse" />
@@ -116,6 +179,16 @@ export default function Navbar() {
 
             {/* Aksi Kanan (Desktop) */}
             <div className="hidden lg:flex items-center gap-3">
+              {/* Tombol Install di Navbar Desktop */}
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted active:scale-95 transition-all"
+              >
+                <Download size={14} className="text-[var(--primary)]" />
+                Install App
+              </button>
+
               <ThemeSwitcher />
             </div>
 
@@ -154,6 +227,18 @@ export default function Navbar() {
                   </button>
                 );
               })}
+
+              {/* Opsi Install di Menu Dropdown Mobile */}
+              <div className="px-5 py-2">
+                <button
+                  type="button"
+                  onClick={handleInstallClick}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--primary)] text-white text-xs font-bold active:scale-95 transition-all shadow-sm"
+                >
+                  <Download size={15} />
+                  Install Aplikasi ke HP
+                </button>
+              </div>
 
               <div className="border-t border-border mt-2 p-4 flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Tema Tampilan</span>
