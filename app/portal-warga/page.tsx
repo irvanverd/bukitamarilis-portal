@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
-import { ChangeEvent, FormEvent, useMemo,useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,24 +14,31 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
+  Eye,
+  EyeOff,
   FileText,
   Home,
   ImagePlus,
+  KeyRound,
   LayoutDashboard,
+  Lock,
   LogOut,
   MapPin,
   Menu,
   MessageSquareWarning,
   Plus,
   ReceiptText,
+  RefreshCw,
   Ruler,
   ShieldCheck,
+  User,
   Wallet,
   X,
 } from "lucide-react";
-
+import { getClientCache, saveClientCache } from "@/lib/client-cache";
 
 type Tab = "ringkasan" | "unit" | "ipl" | "komplain" | "surat";
+
 type Complaint = {
   id: string;
   title: string;
@@ -39,6 +47,7 @@ type Complaint = {
   status: "Diproses" | "Selesai" | "Menunggu";
   detail: string;
 };
+
 type LetterRequest = {
   id: string;
   type: string;
@@ -46,6 +55,57 @@ type LetterRequest = {
   date: string;
   status: "Diproses" | "Selesai" | "Menunggu";
 };
+
+interface RawIPLItem {
+  transId?: string | number;
+  BlokID: string;
+  pmonth: string | number;
+  pyear: string | number;
+  invoice: string;
+  paymethod: string;
+  amount: number;
+  keterangan: string;
+  korwil: string;
+  status: "C" | "O" | string;
+  paidDate: string;
+}
+
+interface PaymentItem {
+  transId: string | number;
+  BlokID: string;
+  period: string;
+  invoice: string;
+  keterangan: string;
+  amount: number;
+  due: string;
+  status: "Lunas" | "Menunggu Verifikasi" | "Belum dibayar";
+  paidDate: string;
+  yearNum: number;
+  monthNum: number;
+}
+
+interface WargaSession {
+  nama?: string;
+  blok?: string;
+  noHp?: string;
+  iplamount?: string | number;
+  loginAt?: string;
+  [key: string]: any;
+}
+
+const NAMA_BULAN = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+function getEndOfMonthDate(year: number, month: number): string {
+  const lastDay = new Date(year, month, 0).getDate();
+  const namaBulanPendek = [
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+  ][month - 1];
+  return `${lastDay} ${namaBulanPendek} ${year}`;
+}
 
 const money = (value: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -62,22 +122,13 @@ const navItems: { id: Tab; label: string; shortLabel: string; icon: typeof Layou
   { id: "surat", label: "Surat Pengantar", shortLabel: "Surat", icon: FileText },
 ];
 
-const payments = [
-  { period: "Oktober 2026", invoice: "IPL-2026-10-A12", amount: 110000, due: "31 Okt 2026", status: "Belum dibayar" },
-  { period: "September 2026", invoice: "IPL-2026-09-A12", amount: 110000, due: "30 Sep 2026", status: "Belum dibayar" },
-  { period: "Agustus 2026", invoice: "IPL-2026-08-A12", amount: 110000, due: "31 Agu 2026", status: "Lunas" },
-  { period: "Juli 2026", invoice: "IPL-2026-07-A12", amount: 110000, due: "31 Jul 2026", status: "Lunas" },
-  { period: "Juni 2026", invoice: "IPL-2026-06-A12", amount: 110000, due: "30 Jun 2026", status: "Lunas" },
-  { period: "Mei 2026", invoice: "IPL-2026-05-A12", amount: 110000, due: "31 Mei 2026", status: "Lunas" },
-];
-
 const initialComplaints: Complaint[] = [
   {
     id: "KMP-026",
     title: "Lampu jalan dekat Blok AR.27 mati",
     category: "Fasilitas umum",
     date: "18 Okt 2026",
-    status: "Diproses",
+    status: "Selesai",
     detail: "Lampu jalan di dekat persimpangan Blok A sudah beberapa malam tidak menyala.",
   },
   {
@@ -101,15 +152,23 @@ const initialLetters: LetterRequest[] = [
 ];
 
 function StatusPill({ status }: { status: string }) {
-  const classes =
-    status === "Lunas" || status === "Selesai"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-      : status === "Terlambat"
-        ? "bg-rose-50 text-rose-700 ring-rose-200"
-        : status === "Diproses"
-          ? "bg-blue-50 text-blue-700 ring-blue-200"
-          : "bg-amber-50 text-amber-700 ring-amber-200";
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${classes}`}>{status}</span>;
+  const isLunas = status === "Lunas";
+  const isPending = status === "Menunggu Verifikasi";
+  const isBelumBayar = status === "Belum dibayar";
+
+  const classes = isLunas
+    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+    : isPending
+    ? "bg-blue-50 text-blue-700 ring-blue-200"
+    : isBelumBayar
+    ? "bg-rose-50 text-rose-700 ring-rose-200"
+    : "bg-amber-50 text-amber-700 ring-amber-200";
+
+  return (
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${classes}`}>
+      {status}
+    </span>
+  );
 }
 
 function SectionHeading({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
@@ -132,7 +191,10 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-export default function PortalWargaPage() {
+function PortalWargaContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [activeTab, setActiveTab] = useState<Tab>("ringkasan");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [housePhoto, setHousePhoto] = useState("");
@@ -145,8 +207,314 @@ export default function PortalWargaPage() {
   const [letterPurpose, setLetterPurpose] = useState("");
   const [toast, setToast] = useState("");
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [session, setSession] = useState<WargaSession | null>(null);
+
+  const [payments, setPayments] = useState<PaymentItem[]>([]);
+  const [loadingIPL, setLoadingIPL] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState("-");
+
   const currentTab = navItems.find((item) => item.id === activeTab) ?? navItems[0];
-  const paidThisYear = useMemo(() => payments.filter((item) => item.status === "Lunas").reduce((total, item) => total + item.amount, 0), []);
+
+  // State Modal Pop-up
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isFirstSetFlow, setIsFirstSetFlow] = useState(false);
+
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+
+  const [passLoading, setPassLoading] = useState(false);
+  const [passError, setPassError] = useState("");
+  const [passSuccess, setPassSuccess] = useState("");
+
+  // Otomatis buka pop-up jika warga membuka link WA dengan param ?action=set-password
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const action = searchParams.get("action");
+    if (action === "set-password") {
+      setIsFirstSetFlow(true);
+      setIsPasswordModalOpen(true);
+    }
+  }, [searchParams, isAuthenticated]);
+
+  // Handler Simpan Kata Sandi
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError("");
+    setPassSuccess("");
+
+    if (!isFirstSetFlow && !oldPassword.trim()) {
+      setPassError("Kata sandi lama wajib diisi.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPassError("Kata sandi baru minimal 6 karakter.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPassError("Konfirmasi kata sandi tidak cocok.");
+      return;
+    }
+
+    setPassLoading(true);
+
+    try {
+      const res = await fetch("/api/auth-warga/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blokid: session?.blok,
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+          isFirstSet: isFirstSetFlow,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!result.success) {
+        setPassError(result.message || "Gagal mengubah kata sandi.");
+        return;
+      }
+
+      setPassSuccess("Kata sandi berhasil disimpan!");
+      setTimeout(() => {
+        setIsPasswordModalOpen(false);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setPassSuccess("");
+        router.replace("/portal-warga");
+      }, 1500);
+    } catch (err: any) {
+      setPassError("Terjadi kendala jaringan saat menyimpan kata sandi.");
+    } finally {
+      setPassLoading(false);
+    }
+  };
+
+  // 1. Validasi sesi login warga dari localStorage
+  useEffect(() => {
+    const rawSession = localStorage.getItem("warga_session");
+
+    if (!rawSession) {
+      router.replace("/portal-warga/login");
+    } else {
+      try {
+        const parsed: WargaSession = JSON.parse(rawSession);
+        setSession(parsed);
+        setIsAuthenticated(true);
+      } catch (err) {
+        localStorage.removeItem("warga_session");
+        router.replace("/portal-warga/login");
+      } finally {
+        setIsChecking(false);
+      }
+    }
+  }, [router]);
+
+  // 2. Mengambil tarif standar langsung dari session
+  const standardIPLRate = useMemo(() => {
+    return Number(session?.iplamount) || 110000;
+  }, [session?.iplamount]);
+
+  // 3. Fetch data IPL dan komparasi dengan bulan berjalan
+  const loadIPLData = async (blokId: string, forceRefresh = false) => {
+    if (!blokId) return;
+
+    const cacheKey = `ipl-list-${blokId.trim().toLowerCase()}`;
+
+    if (!forceRefresh) {
+      const cached = getClientCache<PaymentItem[]>(cacheKey);
+      if (cached?.data && Array.isArray(cached.data)) {
+        setPayments(cached.data);
+        setLoadingIPL(false);
+        setLastUpdated(
+          new Date(cached.timestamp).toLocaleString("id-ID", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        );
+      }
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      if (forceRefresh) setLoadingIPL(true);
+
+      const res = await fetch(`/api/ipl?blokid=${encodeURIComponent(blokId)}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+
+      const json = await res.json();
+      if (!json?.success) throw new Error(json?.message || "Gagal memuat data IPL");
+
+      const rawItems: RawIPLItem[] = Array.isArray(json.data) ? json.data : [];
+      const nominalTarif = Number(session?.iplamount) || 110000;
+
+      const mapSudahBayar = new Map<string, RawIPLItem[]>();
+      rawItems.forEach((item) => {
+        const m = Number(item.pmonth);
+        const y = Number(item.pyear);
+        const key = `${y}-${m}`;
+        const existingList = mapSudahBayar.get(key) || [];
+        existingList.push(item);
+        mapSudahBayar.set(key, existingList);
+      });
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      const START_YEAR = 2026;
+      const START_MONTH = 2; // Mulai Feb 2026
+
+      const fullList: PaymentItem[] = [];
+
+      for (let y = currentYear; y >= START_YEAR; y--) {
+        const maxMonth = y === currentYear ? currentMonth : 12;
+        const minMonth = y === START_YEAR ? START_MONTH : 1;
+
+        for (let m = maxMonth; m >= minMonth; m--) {
+          const key = `${y}-${m}`;
+          const existingRecords = mapSudahBayar.get(key);
+
+          const periodText = `${NAMA_BULAN[m - 1]} ${y}`;
+          const dueText = getEndOfMonthDate(y, m);
+          if (existingRecords && existingRecords.length > 0) {
+            existingRecords.forEach((existing, recordIdx) => {
+              const statusLabel =
+                existing.status === "C"
+                  ? "Lunas"
+                  : existing.status === "O"
+                  ? "Menunggu Verifikasi"
+                  : "Belum dibayar";
+
+              fullList.push({
+                transId: existing.transId || `PAID-${existing.BlokID}-${y}-${m}-${recordIdx}`,
+                BlokID: existing.BlokID,
+                period: periodText,
+                invoice: existing.invoice || `IPL ${NAMA_BULAN[m - 1].toUpperCase()}`,
+                keterangan: existing.keterangan || "-",
+                amount: Number(existing.amount) || nominalTarif,
+                due: dueText,
+                status: statusLabel,
+                paidDate: existing.paidDate || "-",
+                yearNum: y,
+                monthNum: m,
+              });
+            });
+          } else {
+            fullList.push({
+              transId: `UNPAID-${blokId}-${y}-${m}`,
+              BlokID: blokId,
+              period: periodText,
+              invoice: `IPL ${NAMA_BULAN[m - 1].toUpperCase()}`,
+              keterangan: "Tagihan IPL",
+              amount: nominalTarif,
+              due: dueText,
+              status: "Belum dibayar",
+              paidDate: "-",
+              yearNum: y,
+              monthNum: m,
+            });
+          }
+        }
+      }
+
+      setPayments(fullList);
+      saveClientCache(cacheKey, fullList);
+
+      setLastUpdated(
+        json.timestamp
+          ? new Date(json.timestamp).toLocaleString("id-ID", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })
+          : new Date().toLocaleString("id-ID", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })
+      );
+    } catch (err) {
+      console.warn("Gagal memperbarui data IPL dari server, menggunakan data lokal:", err);
+    } finally {
+      clearTimeout(timeout);
+      setLoadingIPL(false);
+    }
+  };
+
+  useEffect(() => {
+    if (session?.blok) {
+      loadIPLData(session.blok);
+    }
+  }, [session?.blok, session?.iplamount]);
+
+  const paidTotal = useMemo(() => {
+    return payments
+      .filter((item) => item.status === "Lunas")
+      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  }, [payments]);
+
+  const totalObligation = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const START_YEAR = 2026;
+    const START_MONTH = 2;
+
+    const totalMonths =
+      (currentYear - START_YEAR) * 12 + (currentMonth - START_MONTH + 1);
+
+    const validMonths = Math.max(0, totalMonths);
+    const monthlyRate = standardIPLRate > 0 ? standardIPLRate : 110000;
+
+    return validMonths * monthlyRate;
+  }, [standardIPLRate]);
+
+  const totalUnpaid = useMemo(() => {
+    const diff = totalObligation - paidTotal;
+    return diff > 0 ? diff : 0;
+  }, [totalObligation, paidTotal]);
+
+  const unpaidCount = useMemo(() => {
+    if (totalUnpaid <= 0) return 0;
+    const monthlyRate = standardIPLRate > 0 ? standardIPLRate : 110000;
+    return Math.ceil(totalUnpaid / monthlyRate);
+  }, [totalUnpaid, standardIPLRate]);
+
+  const nextDueDate = useMemo(() => {
+    const firstUnpaid = payments.find((item) => item.status === "Belum dibayar");
+    return firstUnpaid?.due || "-";
+  }, [payments]);
+
+  function handleLogout() {
+    localStorage.removeItem("warga_session");
+    router.replace("/portal-warga/login");
+  }
+
+  if (isChecking || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-slate-500 font-medium">Memverifikasi akses portal...</p>
+      </div>
+    );
+  }
 
   function goTo(tab: Tab) {
     setActiveTab(tab);
@@ -204,6 +572,15 @@ export default function PortalWargaPage() {
     setToast("Pengajuan surat masuk halaman ini saja. Belum dikirim ke pengurus.");
   }
 
+  const displayName = session?.nama || "Warga Amarilis";
+  const displayBlok = session?.blok || "Blok -";
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("") || "WA";
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
@@ -224,7 +601,6 @@ export default function PortalWargaPage() {
                     <span>{item.label}</span>
                     {active ? <ChevronRight size={16} className="ml-auto" /> : null}
                   </button>
-                  
                 );
               })}
             </nav>
@@ -236,7 +612,9 @@ export default function PortalWargaPage() {
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Hubungi pengurus RT untuk informasi layanan warga.</p>
               <button onClick={() => goTo("komplain")} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary hover:opacity-80">Lihat layanan <ArrowRight size={14} /></button>
             </div>
-            <Link href="/" className="mt-4 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"><LogOut size={17} />Kembali ke portal publik</Link>
+            <button onClick={handleLogout} className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-rose-600 transition-colors">
+              <LogOut size={17} /> Keluar akun
+            </button>
           </div>
         </aside>
 
@@ -253,14 +631,13 @@ export default function PortalWargaPage() {
                 return <button key={item.id} onClick={() => goTo(item.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold ${activeTab === item.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}><Icon size={18} />{item.label}</button>;
               })}
               <div className="mt-5 space-y-3 border-t border-border px-3 pt-4">
-  <p className="text-xs font-bold text-muted-foreground">
-    Tema tampilan
-  </p>
-
-  <ThemeSwitcher />
-</div>
+                <p className="text-xs font-bold text-muted-foreground">Tema tampilan</p>
+                <ThemeSwitcher />
+              </div>
             </nav>
-            <Link href="/" className="mt-5 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted-foreground"><LogOut size={17} />Kembali ke portal publik</Link>
+            <button onClick={handleLogout} className="mt-5 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted-foreground hover:text-rose-600">
+              <LogOut size={17} /> Keluar akun
+            </button>
           </aside>
         ) : null}
 
@@ -271,81 +648,106 @@ export default function PortalWargaPage() {
               <div><p className="text-sm font-bold text-foreground md:text-base">{currentTab.label}</p><p className="hidden text-[11px] text-muted-foreground/70 sm:block">RT 07 / RW 14 · Bukit Amarilis</p></div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden shrink-0 sm:block">
-    <ThemeSwitcher />
-  </div>
-              <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 sm:inline-flex">Mode demo · data dummy</span>
+              <div className="hidden shrink-0 sm:block">
+                <ThemeSwitcher />
+              </div>
               
-              <button onClick={() => setToast("Belum ada notifikasi baru pada mode demo.")} aria-label="Notifikasi" className="relative rounded-xl border border-border p-2 text-muted-foreground hover:bg-muted"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-500" /></button>
+              <button onClick={() => setToast("Belum ada notifikasi baru.")} aria-label="Notifikasi" className="relative rounded-xl border border-border p-2 text-muted-foreground hover:bg-muted"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-500" /></button>
+              
               <div className="flex items-center gap-2.5 border-l border-border pl-3 md:pl-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-extrabold text-primary">JS</div>
-                <div className="hidden sm:block"><p className="text-xs font-bold text-foreground">John Smith</p><p className="text-[10px] text-muted-foreground">Blok AR.13/01</p></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-extrabold text-primary">
+                  {userInitials}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-foreground leading-tight">{displayName}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight flex items-center gap-0.5">
+                    <MapPin size={10} className="text-primary inline shrink-0" />
+                    {displayBlok}
+                  </p>
+                </div>
               </div>
             </div>
           </header>
 
           <main className="mx-auto max-w-[1400px] px-4 py-6 md:px-7 md:py-8">
-            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 sm:text-sm">
-              <strong>Pratinjau tampilan.</strong> Nama, unit, tarif IPL, tagihan, riwayat pembayaran, komplain, dan surat di halaman ini hanyalah data contoh. Belum terhubung ke akun penghuni atau Google Sheets.
-            </div>
             {toast ? <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-primary/10 px-4 py-3 text-sm text-primary"><span>{toast}</span><button onClick={() => setToast("")} aria-label="Tutup pesan"><X size={16} /></button></div> : null}
 
             {activeTab === "ringkasan" ? (
               <>
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-                  <div><p className="text-sm font-medium text-primary">Rabu, 21 Oktober 2026</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground md:text-3xl">Selamat datang, John <span aria-hidden="true">👋</span></h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Pantau tagihan IPL, informasi unit rumah, dan layanan administrasi warga dari satu tempat.</p></div>
-                  <button onClick={() => goTo("unit")} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted">Lihat unit saya <ArrowRight size={16} /></button>
-<Link
-  href="/"
-  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted"
->
-  Kembali ke web <ArrowLeft size={16} />
-</Link>
+                  <div>
+                    <p className="text-sm font-medium text-primary">Portal Warga</p>
+                    <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground md:text-3xl">
+                      Selamat datang, {displayName} <span aria-hidden="true">👋</span>
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Pantau status tagihan IPL unit Anda dan gunakan layanan administrasi secara langsung.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => goTo("unit")} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted">Lihat unit saya <ArrowRight size={16} /></button>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-sm hover:bg-muted"
+                    >
+                      Kembali ke web <ArrowLeft size={16} />
+                    </Link>
+                  </div>
                 </div>
 
-                <section className="relative mb-6 overflow-hidden rounded-[26px] bg-primary text-primary-foreground p-5 text-primary-foreground shadow-lg shadow-emerald-900/10 md:p-7">
+                <section className="relative mb-6 overflow-hidden rounded-[26px] bg-primary text-primary-foreground p-5 shadow-lg shadow-emerald-900/10 md:p-7">
                   <div className="pointer-events-none absolute -right-8 -top-16 h-56 w-56 rounded-full border-[28px] border-white/5" />
                   <div className="pointer-events-none absolute -bottom-24 right-32 h-60 w-60 rounded-full border-[32px] border-white/5" />
                   <div className="relative grid gap-6 md:grid-cols-[1.3fr_0.7fr] md:items-center">
                     <div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-emerald-100"><Wallet size={17} /> Total tagihan saat ini</div>
-                      <p className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">{money(110000)}</p>
-                      <p className="mt-2 text-xs text-emerald-100 md:text-sm">3 periode belum lunas · Termasuk tagihan Oktober 2026</p>
+                      <div className="flex items-center gap-2 text-sm font-medium text-emerald-100"><Wallet size={17} /> Total tunggakan saat ini</div>
+                      <p className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">{money(totalUnpaid)}</p>
+                      <p className="mt-2 text-xs text-emerald-100 md:text-sm">
+                        {unpaidCount > 0 ? `${unpaidCount} periode tagihan belum lunas` : "Belum ada tagihan baru"}
+                      </p>
                       <div className="mt-5 flex flex-wrap gap-2.5">
-                        <button onClick={() => goTo("ipl")} className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10">Lihat detail tagihan <ArrowRight size={16} /></button>
-                        <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-card/10 px-3 py-2.5 text-xs font-semibold"><CalendarDays size={15} /> Jatuh tempo terdekat: 31 Okt</span>
+                        <button onClick={() => goTo("ipl")} className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10">Lihat detail transaksi <ArrowRight size={16} /></button>
+                        <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-card/10 px-3 py-2.5 text-xs font-semibold"><CalendarDays size={15} /> Jatuh tempo: {nextDueDate}</span>
                       </div>
                     </div>
                     <div className="relative rounded-2xl border border-white/15 bg-card/10 p-4 backdrop-blur-sm md:p-5">
-                      <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-emerald-50">Rincian tagihan</span><ReceiptText size={19} className="text-emerald-100" /></div>
+                      <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-emerald-50">Status Pembayaran</span><ReceiptText size={19} className="text-emerald-100" /></div>
                       <div className="mt-4 space-y-3">
-                        <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">Tunggakan sebelumnya</span><span className="font-bold">{money(220000)}</span></div>
-                        <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">IPL Oktober</span><span className="font-bold">{money(110000)}</span></div>
-                        <div className="border-t border-white/20 pt-3"><div className="flex justify-between gap-3 text-sm"><span className="font-semibold">Total belum lunas</span><span className="text-lg font-extrabold">{money(330000)}</span></div></div>
+                        <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">Total riwayat terdata</span><span className="font-bold">{payments.length-unpaidCount} Record(s)</span></div>
+                        <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">Sudah dibayar</span><span className="font-bold">{money(paidTotal)}</span></div>
+                        <div className="border-t border-white/20 pt-3"><div className="flex justify-between gap-3 text-sm"><span className="font-semibold">Sisa tagihan</span><span className="text-lg font-extrabold">{money(totalUnpaid)}</span></div></div>
                       </div>
                     </div>
                   </div>
                 </section>
 
                 <section className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
-                  <StatCard icon={Wallet} label="Tarif IPL / bulan" value={money(110000)} detail="Data simulasi unit AR-13/01" iconClass="bg-primary/10 text-primary" />
-                  <StatCard icon={MessageSquareWarning} label="Komplain aktif" value={`${complaints.filter((item) => item.status !== "Selesai").length} laporan`} detail="Termasuk contoh data" iconClass="bg-violet-50 text-violet-700" />
-                  </section>
+                  <StatCard icon={Wallet} label="Tarif IPL unit" value={money(standardIPLRate)} detail={`Unit ${displayBlok}`} iconClass="bg-primary/10 text-primary" />
+                  <StatCard icon={MessageSquareWarning} label="Komplain aktif" value={`${complaints.filter((item) => item.status !== "Selesai").length} laporan`} detail="total Komplain anda" iconClass="bg-violet-50 text-violet-700" />
+                </section>
 
                 <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
                   <Card>
-                    <SectionHeading title="Ringkasan IPL" description="Tagihan terbaru pada unit Anda" action={<button onClick={() => goTo("ipl")} className="text-xs font-bold text-primary hover:opacity-80">Lihat semua</button>} />
+                    <SectionHeading title="Ringkasan IPL" description="Histori tagihan pada unit Anda" action={<button onClick={() => goTo("ipl")} className="text-xs font-bold text-primary hover:opacity-80">Lihat semua</button>} />
                     <div className="space-y-3">
-                      {payments.slice(0, 3).map((item) => <PaymentRow key={item.invoice} item={item} />)}
+                      {loadingIPL ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">Memuat tagihan...</p>
+                      ) : payments.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">Belum ada catatan tagihan untuk unit ini.</p>
+                      ) : (
+                        payments.slice(0, 3).map((item, idx) => <PaymentRow key={item.transId || idx} item={item} />)
+                      )}
                     </div>
                   </Card>
                   <Card>
                     <SectionHeading title="Unit saya" description="Informasi singkat unit" action={<button onClick={() => goTo("unit")} className="text-xs font-bold text-primary hover:opacity-80">Lihat profil</button>} />
                     <div className="flex gap-4">
                       <div className="flex h-[76px] w-[88px] shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-muted text-muted-foreground/70"><Home size={29} strokeWidth={1.4} /></div>
-                      <div className="min-w-0"><p className="font-bold text-foreground">Blok AR.13/01</p><p className="mt-1 text-sm text-muted-foreground">John Smith</p><p className="mt-2 text-xs text-muted-foreground">Luas rumah <strong className="text-foreground">120 m²</strong></p><p className="mt-1 text-xs text-muted-foreground">Foto rumah belum diunggah</p></div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-foreground">{displayBlok}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{displayName}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">Unit terdaftar di RT 07 / RW 14</p>
+                      </div>
                     </div>
-                    <div className="mt-4 rounded-xl bg-muted px-4 py-3"><div className="flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">Tarif IPL bulanan</span><span className="font-extrabold text-foreground">{money(110000)}</span></div></div>
+                    <div className="mt-4 rounded-xl bg-muted px-4 py-3"><div className="flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">Tarif IPL dasar</span><span className="font-extrabold text-foreground">{money(standardIPLRate)}</span></div></div>
                   </Card>
                 </div>
 
@@ -361,24 +763,47 @@ export default function PortalWargaPage() {
                 <SectionHeading title="Unit saya" description="Profil penghuni dan data unit rumah yang terdaftar." />
                 <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
                   <Card>
-                    <div className="mb-4 flex items-center justify-between"><h3 className="font-bold text-foreground">Foto rumah</h3><span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">Preview lokal</span></div>
+                    <div className="mb-4 flex items-center justify-between"><h3 className="font-bold text-foreground">Foto rumah</h3><span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">Preview</span></div>
                     <div className="relative flex min-h-[230px] items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-muted">
-                      {housePhoto ? <Image src={housePhoto} alt="Pratinjau foto rumah" fill unoptimized sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" /> : <div className="px-6 py-10 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"><ImagePlus size={29} /></span><p className="mt-4 text-sm font-bold text-foreground">Foto rumah belum diunggah</p><p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">Pilih foto untuk melihat pratinjau. Pada tahap ini file tidak disimpan ke server.</p></div>}
+                      {housePhoto ? <Image src={housePhoto} alt="Pratinjau foto rumah" fill unoptimized sizes="(max-width: 768px) 100vw, 40vw" className="object-cover" /> : <div className="px-6 py-10 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"><ImagePlus size={29} /></span><p className="mt-4 text-sm font-bold text-foreground">Foto rumah belum diunggah</p><p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">Pilih foto untuk melihat pratinjau.</p></div>}
                     </div>
                     <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-bold text-foreground hover:bg-muted"><ImagePlus size={17} />{housePhoto ? "Ganti foto rumah" : "Pilih foto rumah"}<input type="file" accept="image/*" className="hidden" onChange={handlePhoto} /></label>
                     <p className="mt-2 text-center text-[11px] text-muted-foreground/70">Format gambar · Maksimal 5 MB</p>
                   </Card>
                   <Card>
-                    <div className="mb-5 flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-foreground">Profil penghuni</h3><p className="mt-1 text-sm text-muted-foreground">Data contoh untuk rancangan tampilan.</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary"><ShieldCheck size={13} className="mr-1 inline" />Terdaftar (demo)</span></div>
+                    <div className="mb-5 flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground">Profil penghuni</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">Data akun penghuni yang aktif.</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {/* Tombol Set / Ubah Kata Sandi */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsFirstSetFlow(false);
+                            setIsPasswordModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted transition-colors"
+                        >
+                          <KeyRound size={14} className="text-primary" />
+                          Ubah Kata Sandi
+                        </button>
+                        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                          <ShieldCheck size={13} className="mr-1 inline" />
+                          Terdaftar
+                        </span>
+                      </div>
+                    </div>
+                    
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <ProfileField label="Nama penghuni" value="John Smith" />
-                      <ProfileField label="Nomor HP" value="08•• •••• 1234" />
-                      <ProfileField label="Nomor blok / unit" value="Blok AR.13/01" icon={<MapPin size={15} />} />
-                      <ProfileField label="Luas rumah" value="120 m²" icon={<Ruler size={15} />} />
-                      <ProfileField label="Tarif IPL bulanan" value={money(110000)} icon={<Wallet size={15} />} />
+                      <ProfileField label="Nama penghuni" value={displayName} />
+                      <ProfileField label="Nomor HP" value={session?.noHp || "-"} />
+                      <ProfileField label="Nomor blok / unit" value={displayBlok} icon={<MapPin size={15} />} />
+                      <ProfileField label="Tarif IPL bulanan" value={money(standardIPLRate)} icon={<Wallet size={15} />} />
                       <ProfileField label="Status keanggotaan" value="Aktif" icon={<CheckCircle2 size={15} />} />
                     </div>
-                    <div className="mt-6 rounded-xl border border-amber-100 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900">Perubahan profil belum dapat dilakukan di halaman ini. Data profil nanti diambil dari data penghuni yang sudah disetujui pengurus.</div>
                   </Card>
                 </div>
               </>
@@ -386,16 +811,59 @@ export default function PortalWargaPage() {
 
             {activeTab === "ipl" ? (
               <>
-                <SectionHeading title="Riwayat pembayaran IPL" description="Daftar tagihan dan status pembayaran unit AR.13/01." />
+                <SectionHeading
+                  title="Riwayat pembayaran IPL"
+                  description={`Daftar tagihan unit ${displayBlok} (Pembaruan terakhir: ${lastUpdated})`}
+                  action={
+                    <button
+                      onClick={() => session?.blok && loadIPLData(session.blok, true)}
+                      disabled={loadingIPL}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-50"
+                    >
+                      <RefreshCw size={14} className={loadingIPL ? "animate-spin" : ""} />
+                      {loadingIPL ? "Menyinkronkan..." : "Perbarui Data"}
+                    </button>
+                  }
+                />
                 <div className="mb-5 grid gap-4 md:grid-cols-3">
-                  <StatCard icon={Wallet} label="Total belum lunas" value={money(110000)} detail="3 periode" iconClass="bg-rose-50 text-rose-700" />
-                  <StatCard icon={CheckCircle2} label="Sudah dibayar" value={money(paidThisYear)} detail="3 periode contoh" iconClass="bg-primary/10 text-primary" />
-                  <StatCard icon={CalendarDays} label="Jatuh tempo berikutnya" value="31 Okt 2026" detail="IPL bulan Oktober" iconClass="bg-amber-50 text-amber-700" />
+                  <StatCard icon={Wallet} label="Total belum lunas" value={money(totalUnpaid)} detail={`${unpaidCount} periode`} iconClass="bg-rose-50 text-rose-700" />
+                  <StatCard icon={CheckCircle2} label="Sudah dibayar" value={money(paidTotal)} detail={`${payments.length - unpaidCount} periode`} iconClass="bg-primary/10 text-primary" />
+                  <StatCard icon={CalendarDays} label="Jatuh tempo terdekat" value={nextDueDate} detail="Berdasarkan tagihan tertunda" iconClass="bg-amber-50 text-amber-700" />
                 </div>
                 <Card className="p-0 md:p-0">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4 md:px-6"><div><h3 className="font-bold text-foreground">Semua tagihan</h3><p className="mt-1 text-xs text-muted-foreground">Periode Mei–Oktober 2026</p></div><span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground"><ReceiptText size={14} />{payments.length} transaksi</span></div>
-                  <div className="overflow-x-auto"><table className="w-full min-w-[730px] text-left text-sm"><thead className="bg-muted text-[11px] uppercase tracking-wide text-muted-foreground"><tr><th className="px-6 py-3 font-semibold">Periode</th><th className="px-4 py-3 font-semibold">Nomor tagihan</th><th className="px-4 py-3 font-semibold">Jumlah</th><th className="px-4 py-3 font-semibold">Jatuh tempo</th><th className="px-6 py-3 font-semibold">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{payments.map((item) => <tr key={item.invoice} className="hover:bg-muted/70"><td className="px-6 py-4 font-semibold text-foreground">{item.period}</td><td className="px-4 py-4 text-xs text-muted-foreground">{item.invoice}</td><td className="px-4 py-4 font-bold text-foreground">{money(item.amount)}</td><td className="px-4 py-4 text-muted-foreground">{item.due}</td><td className="px-6 py-4"><StatusPill status={item.status} /></td></tr>)}</tbody></table></div>
-                  <div className="border-t border-border/60 px-5 py-4 text-xs leading-5 text-muted-foreground md:px-6">Tombol pembayaran online belum diaktifkan. Setelah format data sheet IPL disiapkan, daftar ini dapat dipetakan ke kolom tagihan, tanggal pembayaran, dan status.</div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4 md:px-6"><div><h3 className="font-bold text-foreground">Semua tagihan unit</h3><p className="mt-1 text-xs text-muted-foreground">Data sinkronisasi dari Google Sheets</p></div><span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground"><ReceiptText size={14} />{payments.length} transaksi</span></div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[730px] text-left text-sm">
+                      <thead className="bg-muted text-[11px] uppercase tracking-wide text-muted-foreground">
+                        <tr>
+                          <th className="px-6 py-3 font-semibold">Periode</th>
+                          <th className="px-4 py-3 font-semibold">Keterangan</th>
+                          <th className="px-4 py-3 font-semibold">Jumlah</th>
+                          <th className="px-6 py-3 font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {loadingIPL ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">Memuat data riwayat IPL...</td>
+                          </tr>
+                        ) : payments.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">Tidak ditemukan catatan tagihan IPL untuk blok ini.</td>
+                          </tr>
+                        ) : (
+                          payments.map((item, idx) => (
+                            <tr key={item.transId || idx} className="hover:bg-muted/70 transition-colors">
+                              <td className="px-6 py-4 font-semibold text-foreground">{item.period}</td>
+                              <td className="px-4 py-4 text-xs text-muted-foreground">{item.keterangan || "-"}</td>
+                              <td className="px-4 py-4 font-bold text-foreground">{money(item.amount)}</td>
+                              <td className="px-6 py-4"><StatusPill status={item.status} /></td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </Card>
               </>
             ) : null}
@@ -410,8 +878,7 @@ export default function PortalWargaPage() {
                       <FieldLabel label="Kategori"><select value={complaintCategory} onChange={(event) => setComplaintCategory(event.target.value)} className={fieldClass}><option>Fasilitas umum</option><option>Kebersihan</option><option>Keamanan</option><option>IPL dan administrasi</option><option>Lainnya</option></select></FieldLabel>
                       <FieldLabel label="Judul komplain"><input value={complaintTitle} onChange={(event) => setComplaintTitle(event.target.value)} className={fieldClass} placeholder="Contoh: Lampu jalan tidak menyala" maxLength={100} /></FieldLabel>
                       <FieldLabel label="Detail komplain"><textarea value={complaintDetail} onChange={(event) => setComplaintDetail(event.target.value)} className={`${fieldClass} min-h-[120px] resize-y`} placeholder="Jelaskan lokasi dan kendala yang dialami..." maxLength={1200} /></FieldLabel>
-                      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90"><Plus size={17} />Tambahkan ke daftar demo</button>
-                      <p className="text-[11px] leading-5 text-muted-foreground/70">Pada versi aktif, pengiriman akan disambungkan ke Apps Script dan petugas dapat memperbarui statusnya.</p>
+                      <button type="submit" disabled className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50" ><Plus size={17} />Submit Komplain (belum aktif)</button>
                     </form>
                   </Card>
                   <div><div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Laporan komplain</h3><span className="text-xs text-muted-foreground">{complaints.length} laporan contoh</span></div><div className="space-y-3">{complaints.map((item) => <Card key={item.id} className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">{item.id} · {item.category}</p><h4 className="mt-2 font-bold text-foreground">{item.title}</h4><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.detail}</p></div><StatusPill status={item.status} /></div><div className="mt-4 flex items-center gap-1.5 border-t border-border/60 pt-3 text-xs text-muted-foreground/70"><CalendarDays size={13} />{item.date}</div></Card>)}</div></div>
@@ -428,8 +895,9 @@ export default function PortalWargaPage() {
                     <form onSubmit={submitLetter} className="space-y-4">
                       <FieldLabel label="Jenis surat"><select value={letterType} onChange={(event) => setLetterType(event.target.value)} className={fieldClass}><option>Surat Keterangan Domisili</option><option>Surat Pengantar KTP / KK</option><option>Surat Keterangan Usaha</option><option>Surat Pengantar Nikah</option><option>Surat Keterangan Lainnya</option></select></FieldLabel>
                       <FieldLabel label="Tujuan penggunaan"><textarea value={letterPurpose} onChange={(event) => setLetterPurpose(event.target.value)} className={`${fieldClass} min-h-[115px] resize-y`} placeholder="Jelaskan keperluan surat dan instansi tujuan..." maxLength={800} /></FieldLabel>
-                      <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90"><Plus size={17} />Tambahkan pengajuan demo</button>
-                      <p className="text-[11px] leading-5 text-muted-foreground/70">Belum ada proses verifikasi, tanda tangan, atau unduh surat pada mode demo.</p>
+                      <button type="submit" disabled className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50"><Plus size={17} />
+  Buat pengajuan( belum aktif)
+</button>
                     </form>
                   </Card>
                   <div><div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-foreground">Status pengajuan</h3><span className="text-xs text-muted-foreground">{letters.length} permohonan contoh</span></div>{letters.length === 0 ? <Card className="py-12 text-center"><FileText size={34} className="mx-auto text-slate-300" /><p className="mt-3 font-bold text-foreground">Belum ada pengajuan surat</p><p className="mt-1 text-sm text-muted-foreground">Form di sebelah kiri dapat digunakan untuk mencoba tampilan.</p></Card> : <div className="space-y-3">{letters.map((item) => <Card key={item.id} className="p-4 md:p-5"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">{item.id}</p><h4 className="mt-2 font-bold text-foreground">{item.type}</h4><p className="mt-1 text-sm text-muted-foreground">Tujuan: {item.purpose}</p></div><StatusPill status={item.status} /></div><div className="mt-4 flex items-center gap-1.5 border-t border-border/60 pt-3 text-xs text-muted-foreground/70"><CalendarDays size={13} />Diajukan {item.date}</div></Card>)}</div>}</div>
@@ -437,10 +905,135 @@ export default function PortalWargaPage() {
               </>
             ) : null}
 
-            <footer className="mt-8 border-t border-border pt-5 text-center text-[11px] text-muted-foreground/70">© 2026 Portal Warga RT 07 / RW 14 Bukit Amarilis · Tampilan demonstrasi</footer>
+            <footer className="mt-8 border-t border-border pt-5 text-center text-[11px] text-muted-foreground/70">© 2026 Portal Warga RT 07 / RW 14 Bukit Amarilis</footer>
           </main>
         </div>
       </div>
+
+      {/* POP-UP MODAL SET / CHANGE PASSWORD */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl text-card-foreground">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <KeyRound size={18} />
+                </span>
+                <div>
+                  <h3 className="font-bold text-foreground text-sm sm:text-base">
+                    {isFirstSetFlow ? "Buat Kata Sandi Baru" : "Ubah Kata Sandi"}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Unit {displayBlok} · {displayName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPasswordModalOpen(false);
+                  setPassError("");
+                  setPassSuccess("");
+                }}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {passError && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
+                <span>{passError}</span>
+              </div>
+            )}
+
+            {passSuccess && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-700">
+                <CheckCircle2 size={16} />
+                <span>{passSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="mt-4 space-y-3.5">
+              {!isFirstSetFlow && (
+                <div>
+                  <label className="text-xs font-semibold text-foreground">
+                    Kata Sandi Lama
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showOldPass ? "text" : "password"}
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder="Masukkan sandi saat ini"
+                      className="w-full rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 pr-10 text-xs sm:text-sm text-foreground focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPass(!showOldPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showOldPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-semibold text-foreground">
+                  Kata Sandi Baru
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimal 6 karakter"
+                    className="w-full rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 pr-10 text-xs sm:text-sm text-foreground focus:border-primary focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    {showNewPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground">
+                  Konfirmasi Kata Sandi Baru
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Ulangi kata sandi baru"
+                  className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-xs sm:text-sm text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="mt-5 flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="w-1/2 rounded-xl border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={passLoading}
+                  className="w-1/2 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+                >
+                  {passLoading ? "Menyimpan..." : "Simpan Sandi"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card/95 px-1 pb-[max(env(safe-area-inset-bottom),4px)] pt-2 backdrop-blur lg:hidden">
         {navItems.map((item) => {
@@ -467,11 +1060,48 @@ function StatCard({ icon: Icon, label, value, detail, iconClass }: { icon: typeo
   return <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm md:p-5"><div className="flex items-start justify-between gap-3"><span className="text-xs font-medium text-muted-foreground">{label}</span><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClass}`}><Icon size={18} /></span></div><p className="mt-3 text-xl font-extrabold tracking-tight text-foreground md:text-2xl">{value}</p><p className="mt-1 text-[11px] text-muted-foreground/70">{detail}</p></div>;
 }
 
-function PaymentRow({ item }: { item: (typeof payments)[number] }) {
-  return <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3.5 transition hover:bg-muted/70"><div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.status === "Lunas" ? "bg-primary/10 text-primary" : "bg-amber-50 text-amber-700"}`}>{item.status === "Lunas" ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{item.period}</p><p className="mt-1 text-[11px] text-muted-foreground/70">Jatuh tempo {item.due}</p></div></div><div className="flex shrink-0 flex-col items-end gap-2"><span className="text-sm font-extrabold text-foreground">{money(item.amount)}</span><StatusPill status={item.status} /></div></div>;
+function PaymentRow({ item }: { item: PaymentItem }) {
+  const isLunas = item.status === "Lunas";
+  const isPending = item.status === "Menunggu Verifikasi";
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 p-3.5 transition hover:bg-muted/70">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+          isLunas ? "bg-primary/10 text-primary" : isPending ? "bg-blue-50 text-blue-700" : "bg-rose-50 text-rose-700"
+        }`}>
+          {isLunas ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-foreground">{item.period}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground/70">Jatuh tempo {item.due || "-"}</p>
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <span className="text-sm font-extrabold text-foreground">{money(item.amount)}</span>
+        <StatusPill status={item.status} />
+      </div>
+    </div>
+  );
 }
 
 function ServiceCard({ icon: Icon, title, description, buttonText, onClick, tone }: { icon: typeof FileText; title: string; description: string; buttonText: string; onClick: () => void; tone: "violet" | "blue" }) {
   const iconClass = tone === "violet" ? "bg-violet-50 text-violet-700" : "bg-sky-50 text-sky-700";
   return <Card className="flex items-start gap-4"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconClass}`}><Icon size={20} /></span><div className="min-w-0 flex-1"><h3 className="font-bold text-foreground">{title}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p><button onClick={onClick} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-foreground hover:border-emerald-200 hover:bg-primary/10 hover:text-primary">{buttonText}<ArrowRight size={14} /></button></div></Card>;
+}
+
+// WRAPPER UTAMA SUSPENSE (Mengatasi CSR Bailout Build Error)
+export default function PortalWargaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-slate-500 font-medium">Memuat portal warga...</p>
+        </div>
+      }
+    >
+      <PortalWargaContent />
+    </Suspense>
+  );
 }

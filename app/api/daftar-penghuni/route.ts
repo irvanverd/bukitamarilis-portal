@@ -1,65 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_APPSCRIPT_API;
-
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    if (!API_URL) {
+    const body = await request.json();
+    const appscriptUrl = process.env.NEXT_APPSCRIPT_API;
+
+    if (!appscriptUrl) {
       return NextResponse.json(
-        { success: false, message: "Konfigurasi API belum tersedia." },
+        { success: false, message: "NEXT_APPSCRIPT_API belum dikonfigurasi di server." },
         { status: 500 }
       );
     }
 
-    const body = await req.json();
-    const namaPenghuni = String(body.namaPenghuni ?? "").trim();
-    const blokAlamat = String(body.blokAlamat ?? "").trim();
-    const noHp = String(body.noHp ?? "").trim();
-
-    if (!namaPenghuni || !blokAlamat || !noHp) {
-      return NextResponse.json(
-        { success: false, message: "Nama, blok/alamat rumah, dan nomor HP wajib diisi." },
-        { status: 400 }
-      );
-    }
-
-    const hpDigits = noHp.replace(/\D/g, "");
-    if (namaPenghuni.length > 120 || blokAlamat.length > 200 || hpDigits.length < 9 || hpDigits.length > 15) {
-      return NextResponse.json(
-        { success: false, message: "Periksa kembali nama, alamat, atau nomor HP." },
-        { status: 400 }
-      );
-    }
-
-    const upstream = await fetch(API_URL+ "?action=daftarPenghuni", {
+    const res = await fetch(appscriptUrl, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "daftarPenghuni",
-        namaPenghuni,
-        blokAlamat,
-        noHp,
+        action: "daftar",
+        nama: body.namaPenghuni,
+        blok: body.blokAlamat,
+        noHp: body.noHp,
       }),
       cache: "no-store",
     });
 
-    const text = await upstream.text();
-    let result: { success?: boolean; message?: string; id?: string; status?: string };
-    try {
-      result = JSON.parse(text);
-    } catch {
-      console.error("Apps Script returned non-JSON for daftarPenghuni");
-      return NextResponse.json(
-        { success: false, message: "Respons dari Google Apps Script tidak valid." },
-        { status: 502 }
-      );
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}`);
     }
 
-    return NextResponse.json(result, { status: upstream.ok ? 200 : 502 });
-  } catch (error) {
-    console.error("daftar-penghuni API error:", error);
+    const json = await res.json();
+    return NextResponse.json(json);
+  } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: "Pendaftaran belum dapat diproses. Silakan coba lagi." },
+      { success: false, message: error?.message || "Gagal menghubungi Apps Script." },
       { status: 500 }
     );
   }

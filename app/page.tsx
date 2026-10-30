@@ -44,8 +44,8 @@ export default function HomePage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <MenuCard
-  title="Portal Warga*"
-  desc="Tagihan IPL, Info Unit dan Pelayanan Warga (*Demo)"
+  title="Portal Warga"
+  desc="Tagihan IPL, Info Unit dan Pelayanan Warga"
   href="/portal-warga"
   emoji="🏠"
 />
