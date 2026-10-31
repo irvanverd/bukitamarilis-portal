@@ -2,21 +2,50 @@ export type PortalTheme =
   | "green"
   | "blue"
   | "purple"
-  | "orange"
+  | "sunset"
+  | "ruby"
+  | "pink"
+  | "cyan"
+  | "teal"
+  | "amber"
+  | "indigo"
+  | "lime"
+  | "slate"
   | "red"
-  | "gray"
-  | "dark"
-  | "system";
+  | "emerald"
+  | "dark";
 
 const STORAGE_KEY = "portal-theme";
+const DEFAULT_THEME: PortalTheme = "blue";
 
 export function getStoredTheme(): PortalTheme {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return DEFAULT_THEME;
 
-  return (
-    (localStorage.getItem(STORAGE_KEY) as PortalTheme) ??
-    "system"
-  );
+  const stored = localStorage.getItem(STORAGE_KEY);
+
+  const validThemes: PortalTheme[] = [
+    "green",
+    "blue",
+    "purple",
+    "sunset",
+    "ruby",
+    "pink",
+    "cyan",
+    "teal",
+    "amber",
+    "indigo",
+    "lime",
+    "slate",
+    "red",
+    "emerald",
+    "dark",
+  ];
+
+  if (stored && validThemes.includes(stored as PortalTheme)) {
+    return stored as PortalTheme;
+  }
+
+  return DEFAULT_THEME;
 }
 
 export function saveTheme(theme: PortalTheme) {
@@ -30,25 +59,7 @@ export function applyTheme(theme: PortalTheme) {
 
   const html = document.documentElement;
 
-  if (theme === "system") {
-    html.removeAttribute("data-theme");
-
-    if (
-      window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-    ) {
-      html.classList.add("dark");
-    } else {
-      html.classList.remove("dark");
-    }
-
-    return;
-  }
-
-  html.classList.remove("dark");
   html.setAttribute("data-theme", theme);
 
-  if (theme === "dark") {
-    html.classList.add("dark");
-  }
+  html.classList.toggle("dark", theme === "dark");
 }

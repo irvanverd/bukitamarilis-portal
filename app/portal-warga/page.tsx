@@ -33,7 +33,9 @@ import {
   ShieldCheck,
   User,
   Wallet,
-  X,
+  X,CreditCard,
+  Copy,
+  HouseHeart,
 } from "lucide-react";
 import { getClientCache, saveClientCache } from "@/lib/client-cache";
 
@@ -231,6 +233,26 @@ function PortalWargaContent() {
   const [passLoading, setPassLoading] = useState(false);
   const [passError, setPassError] = useState("");
   const [passSuccess, setPassSuccess] = useState("");
+
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+const [copiedRek, setCopiedRek] = useState(false);
+
+const NO_REK_BRI = "141801000746567"; // Sesuaikan dengan nomor rekening BRI RT Anda
+const NAMA_REK = "Cluster Bukit Amarilis";
+
+const handleCopyRekening = () => {
+  navigator.clipboard.writeText(NO_REK_BRI);
+  setCopiedRek(true);
+  setTimeout(() => setCopiedRek(false), 2000);
+};
+
+// Handler ini dipersiapkan untuk integrasi Payment Gateway ke depan (Midtrans / Xendit / Tripay)
+const handleProceedToPaymentGateway = () => {
+  // NEXT DEV: Panggil API create payment token / redirect ke snap Midtrans
+  // const res = await fetch("/api/payment/create", { method: "POST", body: ... });
+  // window.location.href = res.paymentUrl;
+  alert("Integrasi Payment Gateway otomatis sedang dalam tahap pengembangan. Silakan gunakan metode transfer rekening.");
+};
 
   // Otomatis buka pop-up jika warga membuka link WA dengan param ?action=set-password
   useEffect(() => {
@@ -704,6 +726,16 @@ function PortalWargaContent() {
                         {unpaidCount > 0 ? `${unpaidCount} periode tagihan belum lunas` : "Belum ada tagihan baru"}
                       </p>
                       <div className="mt-5 flex flex-wrap gap-2.5">
+                        {/* TOMBOL BAYAR (Aktif jika ada tunggakan) */}
+  <button
+    type="button"
+    onClick={() => setIsPayModalOpen(true)}
+    disabled={totalUnpaid <= 0}
+    className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-800 shadow-md hover:bg-emerald-50 transition disabled:cursor-not-allowed disabled:opacity-40"
+  >
+    <CreditCard size={16} />
+    {totalUnpaid > 0 ? "Bayar Tagihan Sekarang" : "Tagihan Lunas"}
+  </button>  
                         <button onClick={() => goTo("ipl")} className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10">Lihat detail transaksi <ArrowRight size={16} /></button>
                         <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-card/10 px-3 py-2.5 text-xs font-semibold"><CalendarDays size={15} /> Jatuh tempo: {nextDueDate}</span>
                       </div>
@@ -815,6 +847,17 @@ function PortalWargaContent() {
                   title="Riwayat pembayaran IPL"
                   description={`Daftar tagihan unit ${displayBlok} (Pembaruan terakhir: ${lastUpdated})`}
                   action={
+                    <div className="flex items-center gap-2">
+                    {/* Tombol Bayar di Tab IPL */}
+                    <button
+                      onClick={() => setIsPayModalOpen(true)}
+                      disabled={totalUnpaid <= 0}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 transition"
+                    >
+                      <CreditCard size={14} />
+                      Bayar Tagihan
+                    </button>
+              
                     <button
                       onClick={() => session?.blok && loadIPLData(session.blok, true)}
                       disabled={loadingIPL}
@@ -823,7 +866,7 @@ function PortalWargaContent() {
                       <RefreshCw size={14} className={loadingIPL ? "animate-spin" : ""} />
                       {loadingIPL ? "Menyinkronkan..." : "Perbarui Data"}
                     </button>
-                  }
+                  </div>}
                 />
                 <div className="mb-5 grid gap-4 md:grid-cols-3">
                   <StatCard icon={Wallet} label="Total belum lunas" value={money(totalUnpaid)} detail={`${unpaidCount} periode`} iconClass="bg-rose-50 text-rose-700" />
@@ -909,6 +952,125 @@ function PortalWargaContent() {
           </main>
         </div>
       </div>
+
+      {/* MODAL POP-UP PEMBAYARAN IPL */}
+      {isPayModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl text-card-foreground">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Wallet size={18} />
+                </span>
+                <div>
+                  <h3 className="font-bold text-foreground text-sm sm:text-base">
+                    Pembayaran Iuran IPL
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Unit {displayBlok} · {displayName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPayModalOpen(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Total Tagihan */}
+            <div className="mt-4 rounded-2xl bg-primary/10 p-4 border border-emerald-200/60 dark:border-emerald-800/40">
+              <p className="text-xs font-medium text-muted-foreground">Total Tagihan Saat Ini</p>
+              <p className="mt-1 text-2xl font-extrabold text-primary">{money(totalUnpaid)}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Mencakup {unpaidCount} periode iuran yang belum lunas.
+              </p>
+            </div>
+
+           {/* Metode Pembayaran Manual (Transfer Rekening BRI) */}
+<div className="mt-4 space-y-3">
+  <p className="text-xs font-bold text-foreground">Transfer Bank Manual</p>
+  <div className="rounded-2xl border border-border bg-muted/50 p-4">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        {/* Ikon / Badge Logo Bank BRI */}
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl  text-white shadow-sm ring-1">
+        <Image
+  src="/bri-logo.png"
+  alt="Logo BRI"
+  width={35}
+  height={35}
+  className="object-contain"
+/>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold tracking-tight text-[#00529C] dark:text-sky-400 text-sm">
+              BANK BRI
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            PT Bank Rakyat Indonesia (Persero) Tbk
+          </p>
+        </div>
+      </div>
+
+      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+        Transfer Manual
+      </span>
+    </div>
+
+    <div className="mt-3 flex items-center justify-between rounded-xl bg-card border border-border/80 px-3.5 py-2.5">
+      <div>
+        <p className="text-[10px] text-muted-foreground">Nomor Rekening</p>
+        <p className="font-mono text-sm font-extrabold text-foreground tracking-wider">
+          {NO_REK_BRI}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handleCopyRekening}
+        className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted px-2.5 py-1.5 text-[11px] font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition"
+      >
+        {copiedRek ? <CheckCircle2 size={13} className="text-emerald-500" /> : <Copy size={13} />}
+        <span>{copiedRek ? "Tersalin" : "Salin"}</span>
+      </button>
+    </div>
+
+    <div className="mt-2 text-xs">
+      <p className="text-[11px] text-muted-foreground">
+        Atas Nama: <strong className="text-foreground">{NAMA_REK}</strong>
+      </p>
+    </div>
+  </div>
+</div>
+
+            {/* Instruksi Konfirmasi & Payment Gateway Preview */}
+            <div className="mt-4 rounded-xl bg-muted/60 p-3 text-[11px] leading-relaxed text-muted-foreground space-y-1.5">
+              <p className="font-semibold text-foreground">Catatan Pembayaran:</p>
+              <p>1. Cantumkan keterangan transfer: <strong>IPL {displayBlok}</strong>.</p>
+              <p>2. Simpan struk/bukti transfer untuk konfirmasi otomatis ke bendahara.</p>
+            </div>
+
+            {/* Tombol Aksi */}
+            <div className="mt-5 flex gap-2">
+              {/* Persiapan Next Dev untuk Payment Gateway */}
+              <button
+                type="button"
+                onClick={handleProceedToPaymentGateway}
+                className="w-full rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1.5"
+              >
+                <CreditCard size={15} />
+                <span>Bayar Otomatis (Payment Gateway)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* POP-UP MODAL SET / CHANGE PASSWORD */}
       {isPasswordModalOpen && (

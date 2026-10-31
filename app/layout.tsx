@@ -13,9 +13,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  
   return (
-    <html lang="id" className={cn("font-sans", geist.variable)}>
-      <body className="bg-slate-50">
+    <html lang="id" data-theme="blue" className={cn("font-sans", geist.variable)}>
+      <body className="min-h-screen bg-background text-foreground">
         <Navbar />
 
         <main>{children}</main>

@@ -6,6 +6,7 @@ import { useState, useEffect, useTransition } from "react";
 import { Menu, X, Download, Smartphone } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
+
 // Tipe interface untuk event PWA
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -21,6 +22,7 @@ const menus = [
   { name: "Pengurus", href: "/pengurus" },
   { name: "Tentang", href: "/tentang" },
 ];
+
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -89,6 +91,8 @@ export default function Navbar() {
   };
 
   if (pathname.startsWith("/portal-warga")) return null;
+  if (pathname.startsWith("/portal-admin")) return null;
+  
 
   return (
     <>
