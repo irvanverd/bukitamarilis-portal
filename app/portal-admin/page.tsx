@@ -37,8 +37,6 @@ import {
 } from "lucide-react";
 import WargaManager from "@/components/admin/WargaManager";
 import KeuanganBrowser from "@/components/admin/KeuanganBrowser";
-// 1. Import komponen
-import InstallAppModal from "@/components/admin/InstallAppModal";
 
 interface WargaLookupItem {
   Blok?: string;
@@ -133,6 +131,39 @@ const money = (val: number) =>
   }).format(val);
 
 function PortalAdminContent() {
+
+  // 1. Tambahkan state ini di dalam fungsi PortalAdminContent
+const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+// 2. Tambahkan useEffect penangkap event PWA
+useEffect(() => {
+  const handleBeforeInstall = (e: any) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+    setShowInstallBanner(true);
+  };
+
+  window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+  };
+}, []);
+
+// 3. Tambahkan fungsi trigger klik install
+const handleInstallApp = async () => {
+  if (!deferredPrompt) return;
+  
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  
+  if (outcome === "accepted") {
+    setShowInstallBanner(false);
+  }
+  setDeferredPrompt(null);
+};
+
   // State Session & Otentikasi
   const router = useRouter();
   const [session, setSession] = useState<AdminSession | null>(null);
@@ -402,11 +433,38 @@ if (isCheckingAuth) {
 
 return (
   <div className="flex min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex-col lg:flex-row">
-      <div className="min-h-screen bg-slate-50 ...">
-      {/* Pop-up Pasang Aplikasi (PWA) */}
-      <InstallAppModal />
+    {/* Banner Install PWA (Sama persis seperti model Navbar) */}
+{showInstallBanner && (
+  <div className="bg-emerald-600 px-4 py-2.5 text-white shadow-md">
+    <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 text-xs">
+      <div className="flex items-center gap-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 font-bold">
+          ↓
+        </span>
+        <p className="font-medium">
+          Pasang aplikasi <strong>MyAdmin</strong> di layar utama untuk akses lebih cepat.
+        </p>
       </div>
-    
+
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={handleInstallApp}
+          className="rounded-lg bg-white px-3 py-1 font-bold text-emerald-800 shadow hover:bg-emerald-50 transition"
+        >
+          Pasang
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowInstallBanner(false)}
+          className="rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white transition"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     {/* Toast Alert */}
     {toast && (
       <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl">
