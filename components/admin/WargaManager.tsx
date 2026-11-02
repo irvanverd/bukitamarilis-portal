@@ -81,9 +81,9 @@ export default function WargaManager() {
   // Form Field States
   const [formBlok, setFormBlok] = useState("");
   const [formNama, setFormNama] = useState("");
-  const [formStatusRumah, setFormStatusRumah] = useState("Dihuni Sendiri");
+  const [formStatusRumah, setFormStatusRumah] = useState("HUNI");
   const [formNoHp, setFormNoHp] = useState("");
-  const [formKorwil, setFormKorwil] = useState("Korwil 1");
+  const [formKorwil, setFormKorwil] = useState("");
   const [formTarif, setFormTarif] = useState<number>(110000);
 
   // State Khusus Riwayat IPL Warga (View Mode)
@@ -105,8 +105,8 @@ export default function WargaManager() {
         const mapped = json.data.map((item: any) => ({
           Blok: item.Blok || item.BlokID || "",
           Nama: item.Nama || item.NamaAlias || "",
-          StatusRumah: item.StatusRumah || item.Status || "Dihuni Sendiri",
-          NoHp: item.NoHp || item.NoHP || item.Telepon || "-",
+          StatusRumah: item.statusRumah || item.Status || "-",
+          NoHp: item.MobileNo || item.NoHP || item.Telepon || "-",
           Korwil: item.Korwil || "Korwil 1",
           Iplamount: item.Iplamount || "110000",
         }));
@@ -355,10 +355,10 @@ export default function WargaManager() {
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
           >
             <option value="SEMUA">Semua Korwil</option>
-            <option value="Korwil 1">Korwil 1 (AR.01 - AR.08)</option>
-            <option value="Korwil 2">Korwil 2 (AR.09 - AR.16)</option>
-            <option value="Korwil 3">Korwil 3 (AR.17 - AR.24)</option>
-            <option value="Korwil 4">Korwil 4 (AR.25 - AR.32)</option>
+            <option value="SUDARMANTO">SUDARMANTO</option>
+            <option value="ALEX">ALEX</option>
+            <option value="NIKO">NIKO</option>
+            <option value="ANDRO">ANDRO</option>
           </select>
         </div>
       </div>

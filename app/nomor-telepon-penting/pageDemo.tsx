@@ -31,7 +31,7 @@ const contacts: Contact[] = [
     name: "Pos Security Bukit Amarilis",
     category: "Keamanan lingkungan",
     number: "+6285810761663",
-    note: "Nomor resmi pos security.",
+    note: "Nomor Pos security.",
     icon: Headset,
   },
   {

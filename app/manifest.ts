@@ -33,5 +33,22 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    // TAMBAHKAN SHORTCUT MENU INI:
+    shortcuts: [
+      {
+        name: "Admin Portal",
+        short_name: "Admin",
+        description: "Akses menu manajemen dan entri transaksi kas RT",
+        url: "/portal-admin",
+        icons: [{ src: "/icons/icon-192admin.png", sizes: "192x192" }],
+      },
+      {
+        name: "Portal Warga",
+        short_name: "Warga",
+        description: "Akses riwayat tagihan IPL dan profil unit",
+        url: "/portal-warga",
+        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
+      },
+    ],
   };
 }

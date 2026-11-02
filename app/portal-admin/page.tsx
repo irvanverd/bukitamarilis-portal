@@ -37,7 +37,8 @@ import {
 } from "lucide-react";
 import WargaManager from "@/components/admin/WargaManager";
 import KeuanganBrowser from "@/components/admin/KeuanganBrowser";
-
+// 1. Import komponen
+import InstallAppModal from "@/components/admin/InstallAppModal";
 
 interface WargaLookupItem {
   Blok?: string;
@@ -46,6 +47,9 @@ interface WargaLookupItem {
   NamaAlias?: string;
   Korwil?: string;
   Iplamount?: string | number;
+  StatusRumah?: string | number;
+  MobileNo?: string | number;
+
   [key: string]: any;
 }
 
@@ -398,6 +402,11 @@ if (isCheckingAuth) {
 
 return (
   <div className="flex min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex-col lg:flex-row">
+      <div className="min-h-screen bg-slate-50 ...">
+      {/* Pop-up Pasang Aplikasi (PWA) */}
+      <InstallAppModal />
+      </div>
+    
     {/* Toast Alert */}
     {toast && (
       <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl">
@@ -417,6 +426,7 @@ return (
           <p className="text-[10px] text-slate-400">Bukit Amarilis</p>
         </div>
       </div>
+    
       <div className="flex items-center gap-2">
         <ThemeSwitcher />
         <button

@@ -300,7 +300,6 @@ export default function DaftarPenghuniPage() {
                       onChange={(e) => setBlokAlamat(e.target.value)}
                       required
                       maxLength={100}
-                      autoComplete="street-address"
                       placeholder="Contoh: AR.12/00"
                       className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3.5 text-sm uppercase text-slate-800 shadow-sm focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
