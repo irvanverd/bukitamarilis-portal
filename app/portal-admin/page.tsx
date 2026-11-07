@@ -3,6 +3,7 @@
 import { useState, useMemo, Suspense,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import InputIPLForm from "@/components/admin/InputIPLForm";
 import Link from "next/link";
 import {
   ArrowDownLeft,
@@ -443,6 +444,47 @@ if (isCheckingAuth) {
 
 return (
   <div className="flex min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex-col lg:flex-row">
+   
+   {/* POP-UP / BANNER INSTALL APPS (Persis Navbar.tsx) */}
+   {showInstallBanner && (
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-4 py-2.5 shadow-md">
+        <div className="mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-white/20 rounded-lg">
+              <Smartphone size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-semibold">
+                Pasang Aplikasi MyAmarilis Admin
+              </p>
+              <p className="text-[11px] text-emerald-100 hidden sm:block">
+                Akses portal pengurus dan entri data lebih cepat langsung dari layar utama HP Anda.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleInstallClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+            >
+              <Download size={14} />
+              Install
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowInstallBanner(false)}
+              className="p-1 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-colors"
+              aria-label="Tutup banner"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+   
     {/* Toast Alert */}
     {toast && (
       <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl">
@@ -819,270 +861,8 @@ return (
         )}
 {/* ================= TAB 2: INPUT IPL ================= */}
 {activeTab === "input-ipl" && (
-  <div className="max-w-2xl">
-    <div className="mb-6">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-        Entri Transaksi IPL Warga
-      </h1>
-      <p className="text-xs text-slate-500">
-        Pencatatan pembayaran IPL tunai maupun transfer manual beserta bukti pembayaran.
-      </p>
-    </div>
-
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          showToast(`IPL unit ${iplBlok} tanggal ${iplTanggal} berhasil disimpan!`);
-          setIplBlok("");
-          setIplFoto("");
-        }}
-        className="space-y-4"
-      >
-        {/* Tanggal Pembayaran & No. Blok Unit (Lookup getListWarga) */}
-
-
-  {/* Field Nomor Blok dengan Auto Lookup */}
-  <div className="relative">
-    <div className="flex items-center justify-between">
-      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-        Nomor Blok Unit
-      </label>
-      {namaWargaTerpilih && (
-        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 truncate max-w-[150px]">
-          {namaWargaTerpilih}
-        </span>
-      )}
-    </div>
-
-    <div className="relative mt-1">
-      <input
-        type="text"
-        required
-        placeholder="Ketik atau cari blok..."
-        value={iplBlok}
-        onFocus={() => setIsDropdownBlokOpen(true)}
-        onChange={(e) => {
-          setIplBlok(e.target.value.toUpperCase());
-          setSearchBlokQuery(e.target.value);
-          setIsDropdownBlokOpen(true);
-        }}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-9 text-xs sm:text-sm uppercase text-slate-800 focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-      />
-      <button
-        type="button"
-        onClick={() => setIsDropdownBlokOpen(!isDropdownBlokOpen)}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-      >
-        <Search size={15} />
-      </button>
-    </div>
-
-    {/* Dropdown Popover List Unit */}
-    {isDropdownBlokOpen && (
-      <div className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-        {loadingLookup ? (
-          <div className="p-3 text-center text-xs text-slate-400">
-            Memuat daftar blok warga...
-          </div>
-        ) : filteredBlokList.length === 0 ? (
-          <div className="p-3 text-center text-xs text-slate-400">
-            Blok tidak ditemukan.
-          </div>
-        ) : (
-          filteredBlokList.map((w, idx) => {
-            const b = w.Blok || w.BlokID || "";
-            const n = w.Nama || w.NamaAlias || "Tanpa Nama";
-            const k = w.Korwil || "-";
-
-            return (
-              <button
-                key={`${b}-${idx}`}
-                type="button"
-                onClick={() => handleSelectUnit(w)}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              >
-                <div>
-                  <span className="font-extrabold uppercase text-slate-900 dark:text-white">
-                    {b}
-                  </span>
-                  <span className="ml-2 font-medium text-slate-500 dark:text-slate-400">
-                    · {n}
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                  {k}
-                </span>
-              </button>
-            );
-          })
-        )}
-      </div>
-    )}
-  </div>
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-  <div>
-    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-      Tanggal Pembayaran
-    </label>
-    <input
-      type="date"
-      required
-      value={iplTanggal}
-      onChange={handleTanggalChange}
-      className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-    />
-  </div>
-</div>
-
-    {/* Periode Tagihan: Terisi otomatis mengikuti tanggal yang dipilih */}
-<div className="grid grid-cols-2 gap-3">
-  <div>
-    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-      Bulan Tagihan
-    </label>
-    <select
-      value={iplBulan}
-      onChange={(e) => setIplBulan(e.target.value)}
-      className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-    >
-      <option value="1">Januari</option>
-      <option value="2">Februari</option>
-      <option value="3">Maret</option>
-      <option value="4">April</option>
-      <option value="5">Mei</option>
-      <option value="6">Juni</option>
-      <option value="7">Juli</option>
-      <option value="8">Agustus</option>
-      <option value="9">September</option>
-      <option value="10">Oktober</option>
-      <option value="11">November</option>
-      <option value="12">Desember</option>
-    </select>
-  </div>
-  <div>
-    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-      Tahun Tagihan
-    </label>
-    <input
-      type="number"
-      value={iplTahun}
-      onChange={(e) => setIplTahun(e.target.value)}
-      className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-    />
-  </div>
-</div>
-
-        {/* Nominal & Metode Bayar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Jumlah Pembayaran (Rp)
-            </label>
-            <input
-              type="number"
-              required
-              value={iplNominal}
-              onChange={(e) => setIplNominal(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Metode Pembayaran
-            </label>
-            <select
-              value={iplMetode}
-              onChange={(e) => setIplMetode(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-            >
-              <option value="Transfer BRI">Transfer Bank BRI</option>
-              <option value="Tunai / Cash">Tunai / Melalui Korwil</option>
-              <option value="Payment Gateway">QRIS / Online Gateway</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Korwil */}
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Wilayah Korwil
-          </label>
-          <select
-            value={iplKorwil}
-            onChange={(e) => setIplKorwil(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          >
-           <option>Sudarmanto</option>
-            <option>Alex</option>
-            <option>Niko</option>
-            <option>Andro</option>
-          </select>
-        </div>
-
-        <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Keterangan
-            </label>
-            <input
-              type="text"
-      
-              className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm uppercase dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-            />
-          </div>
-
-        {/* Lampiran Foto Bukti Pembayaran */}
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Bukti Struk Transfer / Kwitansi Fisik
-          </label>
-          <div className="mt-1.5 flex flex-col gap-3">
-            {iplFoto ? (
-              <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2">
-                <div className="relative h-44 w-full">
-                  <img
-                    src={iplFoto}
-                    alt="Pratinjau Bukti Bayar"
-                    className="h-full w-full object-contain rounded-xl"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIplFoto("")}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-rose-50 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 transition"
-                >
-                  <Trash2 size={14} />
-                  <span>Hapus / Ganti Foto</span>
-                </button>
-              </div>
-            ) : (
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-6 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
-                  <Upload size={18} />
-                </div>
-                <p className="mt-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Pilih atau Ambil Foto Bukti Bayar
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-400">PNG, JPG, JPEG (Maks. 3 MB)</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileToBase64(e, setIplFoto)}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition"
-        >
-          <Plus size={16} /> Simpan Data Pembayaran IPL
-        </button>
-      </form>
-    </div>
+  <div className="space-y-6">
+    <InputIPLForm />
   </div>
 )}
 

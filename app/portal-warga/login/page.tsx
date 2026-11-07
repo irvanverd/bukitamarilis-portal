@@ -197,16 +197,18 @@ export default function LoginPage() {
 
       const sessionPayload = {
         blok: user.blok || identifier,
+        namaalias: user.namaalias || "User",
         nama: user.nama || "Warga Amarilis",
         noHp: user.noHp || (loginMethod === "hp" ? identifier : "-"),
         iplamount: String(user.iplamount || "110000"),
+        flagfreeipl: String(user.flagfreeipl || "0"),
         loginAt: new Date().toISOString(),
       };
 
       // Simpan session yang sudah terverifikasi ke localStorage
       localStorage.setItem("warga_session", JSON.stringify(sessionPayload));
 
-      setSuccessMsg(`Selamat datang, ${sessionPayload.nama}! Mengalihkan...`);
+      setSuccessMsg(`Selamat datang, ${sessionPayload.namaalias}! Mengalihkan...`);
 
       setTimeout(() => {
         router.push("/portal-warga");

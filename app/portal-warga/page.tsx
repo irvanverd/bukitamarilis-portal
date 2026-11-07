@@ -88,10 +88,12 @@ interface PaymentItem {
 
 interface WargaSession {
   nama?: string;
+  namaalias?: string;
   blok?: string;
   noHp?: string;
   iplamount?: string | number;
   loginAt?: string;
+  flagfreeipl ?: string | number;
   [key: string]: any;
 }
 
@@ -238,7 +240,7 @@ function PortalWargaContent() {
 const [copiedRek, setCopiedRek] = useState(false);
 
 const NO_REK_BRI = "141801000746567"; // Sesuaikan dengan nomor rekening BRI RT Anda
-const NAMA_REK = "Cluster Bukit Amarilis";
+const NAMA_REK = "RT Cluster Bukit Amarilis";
 
 const handleCopyRekening = () => {
   navigator.clipboard.writeText(NO_REK_BRI);
@@ -253,6 +255,8 @@ const handleProceedToPaymentGateway = () => {
   // window.location.href = res.paymentUrl;
   alert("Integrasi Payment Gateway otomatis sedang dalam tahap pengembangan. Silakan gunakan metode transfer rekening.");
 };
+
+
 
   // Otomatis buka pop-up jika warga membuka link WA dengan param ?action=set-password
   useEffect(() => {
@@ -439,7 +443,7 @@ const handleProceedToPaymentGateway = () => {
                 monthNum: m,
               });
             });
-          } else {
+          } /* else {
             fullList.push({
               transId: `UNPAID-${blokId}-${y}-${m}`,
               BlokID: blokId,
@@ -453,7 +457,7 @@ const handleProceedToPaymentGateway = () => {
               yearNum: y,
               monthNum: m,
             });
-          }
+          } */
         }
       }
 
@@ -594,8 +598,11 @@ const handleProceedToPaymentGateway = () => {
     setToast("Pengajuan surat masuk halaman ini saja. Belum dikirim ke pengurus.");
   }
 
+  const displayAlias = session?.namaalias || "username";
   const displayName = session?.nama || "Warga Amarilis";
   const displayBlok = session?.blok || "Blok -";
+  const isFreeIPL = session?.flagfreeipl === 0 || session?.flagFreeIPL === "0" || session?.FreeIPL === 0 || session?.FreeIPL === "0";
+
   const userInitials = displayName
     .split(" ")
     .filter(Boolean)
@@ -681,7 +688,12 @@ const handleProceedToPaymentGateway = () => {
                   {userInitials}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold text-foreground leading-tight">{displayName}</p>
+                <p className="text-xs font-bold text-foreground leading-tight">
+  {displayName}
+  <span className="block text-[10px] font-normal text-muted-foreground">
+    {displayAlias}
+  </span>
+</p>
                   <p className="text-[10px] text-muted-foreground leading-tight flex items-center gap-0.5">
                     <MapPin size={10} className="text-primary inline shrink-0" />
                     {displayBlok}
@@ -716,40 +728,124 @@ const handleProceedToPaymentGateway = () => {
                 </div>
 
                 <section className="relative mb-6 overflow-hidden rounded-[26px] bg-primary text-primary-foreground p-5 shadow-lg shadow-emerald-900/10 md:p-7">
-                  <div className="pointer-events-none absolute -right-8 -top-16 h-56 w-56 rounded-full border-[28px] border-white/5" />
-                  <div className="pointer-events-none absolute -bottom-24 right-32 h-60 w-60 rounded-full border-[32px] border-white/5" />
-                  <div className="relative grid gap-6 md:grid-cols-[1.3fr_0.7fr] md:items-center">
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-emerald-100"><Wallet size={17} /> Total tunggakan saat ini</div>
-                      <p className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">{money(totalUnpaid)}</p>
-                      <p className="mt-2 text-xs text-emerald-100 md:text-sm">
-                        {unpaidCount > 0 ? `${unpaidCount} periode tagihan belum lunas` : "Belum ada tagihan baru"}
-                      </p>
-                      <div className="mt-5 flex flex-wrap gap-2.5">
-                        {/* TOMBOL BAYAR (Aktif jika ada tunggakan) */}
-  <button
-    type="button"
-    onClick={() => setIsPayModalOpen(true)}
-    disabled={totalUnpaid <= 0}
-    className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-800 shadow-md hover:bg-emerald-50 transition disabled:cursor-not-allowed disabled:opacity-40"
-  >
-    <CreditCard size={16} />
-    {totalUnpaid > 0 ? "Bayar Tagihan Sekarang" : "Tagihan Lunas"}
-  </button>  
-                        <button onClick={() => goTo("ipl")} className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10">Lihat detail transaksi <ArrowRight size={16} /></button>
-                        <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-card/10 px-3 py-2.5 text-xs font-semibold"><CalendarDays size={15} /> Jatuh tempo: {nextDueDate}</span>
-                      </div>
-                    </div>
-                    <div className="relative rounded-2xl border border-white/15 bg-card/10 p-4 backdrop-blur-sm md:p-5">
-                      <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-emerald-50">Status Pembayaran</span><ReceiptText size={19} className="text-emerald-100" /></div>
-                      <div className="mt-4 space-y-3">
-                        <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">Total riwayat terdata</span><span className="font-bold">{payments.length-unpaidCount} Record(s)</span></div>
-                        <div className="flex justify-between gap-3 text-sm"><span className="text-emerald-100">Sudah dibayar</span><span className="font-bold">{money(paidTotal)}</span></div>
-                        <div className="border-t border-white/20 pt-3"><div className="flex justify-between gap-3 text-sm"><span className="font-semibold">Sisa tagihan</span><span className="text-lg font-extrabold">{money(totalUnpaid)}</span></div></div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
+  <div>
+    <div className="pointer-events-none absolute -right-8 -top-16 h-56 w-56 rounded-full border-[28px] border-white/5" />
+    <div className="pointer-events-none absolute -bottom-24 right-32 h-60 w-60 rounded-full border-[32px] border-white/5" />
+    
+    <div className="relative grid gap-6 md:grid-cols-[1.3fr_0.7fr] md:items-center">
+      {/* SISI KIRI: INFO TAGIHAN / STATUS FREE IPL */}
+      <div>
+        <div className="flex items-center gap-2 text-sm font-medium text-emerald-100">
+          <Wallet size={17} /> 
+          {isFreeIPL ? "Status Beban Iuran Lingkungan" : "Total tunggakan saat ini"}
+        </div>
+
+        <p className="mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
+          {isFreeIPL ? "Rp 0" : money(totalUnpaid)}
+        </p>
+
+        <p className="mt-2 text-xs text-emerald-100 md:text-sm">
+          {isFreeIPL ? (
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              Unit hunian ini mendapatkan fasilitas pembebasan tagihan (Free IPL).
+            </span>
+          ) : unpaidCount > 0 ? (
+            `${unpaidCount} periode tagihan belum lunas`
+          ) : (
+            "Belum ada tagihan baru"
+          )}
+        </p>
+
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          {isFreeIPL ? (
+            /* JIKA FREE IPL: TAMPILKAN STATUS BEBAS & LIHAT DETAIL SAJA */
+            <>
+              <span className="inline-flex items-center gap-2 rounded-xl bg-white/20 px-4 py-2.5 text-sm font-bold text-white shadow-sm backdrop-blur-sm">
+                Unit Bebas Iuran
+              </span>
+              <button 
+                type="button"
+                onClick={() => goTo("ipl")} 
+                className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10 transition"
+              >
+                Lihat detail transaksi <ArrowRight size={16} />
+              </button>
+            </>
+          ) : (
+            /* JIKA WARGA REGULER: TAMPILKAN TOMBOL BAYAR & JATUH TEMPO */
+            <>
+              <button
+                type="button"
+                onClick={() => setIsPayModalOpen(true)}
+                disabled={totalUnpaid <= 0}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-800 shadow-md hover:bg-emerald-50 transition disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <CreditCard size={16} />
+                {totalUnpaid > 0 ? "Bayar Tagihan Sekarang" : "Tagihan Lunas"}
+              </button>  
+              <button 
+                type="button"
+                onClick={() => goTo("ipl")} 
+                className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-bold text-primary shadow-sm hover:bg-primary/10 transition"
+              >
+                Lihat detail transaksi <ArrowRight size={16} />
+              </button>
+              <span className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-card/10 px-3 py-2.5 text-xs font-semibold">
+                <CalendarDays size={15} /> Jatuh tempo: {nextDueDate}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* SISI KANAN: STATUS CARD RINGKASAN */}
+      <div className="relative rounded-2xl border border-white/15 bg-card/10 p-4 backdrop-blur-sm md:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-semibold text-emerald-50">Status Pembayaran</span>
+          <ReceiptText size={19} className="text-emerald-100" />
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {isFreeIPL ? (
+            <>
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-emerald-100">Kategori Tagihan</span>
+                <span className="font-bold text-emerald-200">Bebas IPL (0)</span>
+              </div>
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-emerald-100">Kewajiban Bulanan</span>
+                <span className="font-bold text-emerald-200">Rp 0 / bln</span>
+              </div>
+              <div className="border-t border-white/20 pt-3">
+                <div className="flex justify-between gap-3 text-sm">
+                  <span className="font-semibold">Sisa tagihan</span>
+                  <span className="text-lg font-extrabold text-emerald-200">Rp 0</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-emerald-100">Total riwayat terdata</span>
+                <span className="font-bold">{payments.length - unpaidCount} Record(s)</span>
+              </div>
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-emerald-100">Sudah dibayar</span>
+                <span className="font-bold">{money(paidTotal)}</span>
+              </div>
+              <div className="border-t border-white/20 pt-3">
+                <div className="flex justify-between gap-3 text-sm">
+                  <span className="font-semibold">Sisa tagihan</span>
+                  <span className="text-lg font-extrabold">{money(totalUnpaid)}</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
                 <section className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-2">
                   <StatCard icon={Wallet} label="Tarif IPL unit" value={money(standardIPLRate)} detail={`Unit ${displayBlok}`} iconClass="bg-primary/10 text-primary" />
@@ -830,6 +926,7 @@ const handleProceedToPaymentGateway = () => {
                     </div>
                     
                     <div className="grid gap-4 sm:grid-cols-2">
+                    <ProfileField label="Nama pengguna" value={displayAlias} />
                       <ProfileField label="Nama penghuni" value={displayName} />
                       <ProfileField label="Nomor HP" value={session?.noHp || "-"} />
                       <ProfileField label="Nomor blok / unit" value={displayBlok} icon={<MapPin size={15} />} />
@@ -981,6 +1078,7 @@ const handleProceedToPaymentGateway = () => {
               </button>
             </div>
 
+
             {/* Total Tagihan */}
             <div className="mt-4 rounded-2xl bg-primary/10 p-4 border border-emerald-200/60 dark:border-emerald-800/40">
               <p className="text-xs font-medium text-muted-foreground">Total Tagihan Saat Ini</p>
@@ -1071,6 +1169,7 @@ const handleProceedToPaymentGateway = () => {
           </div>
         </div>
       )}
+
 
       {/* POP-UP MODAL SET / CHANGE PASSWORD */}
       {isPasswordModalOpen && (

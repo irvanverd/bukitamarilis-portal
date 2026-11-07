@@ -19,5 +19,5 @@ export function proxy(req: NextRequest) {
 //}
 
 //export const config = {
-//  matcher: ["/list-peserta/:path*"],
+//  matcher: [/:path*"],
 };
