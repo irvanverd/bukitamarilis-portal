@@ -15,6 +15,8 @@ import {
   ReceiptText,
   RefreshCw,
   Search,
+  ShieldCheck,
+  Smartphone,
   User,
   Users,
   Wallet,
@@ -28,6 +30,8 @@ export interface WargaRecord {
   NoHp?: string;
   Korwil?: string;
   Iplamount?: string | number;
+  flagFreeIPL?: number | string;
+  flagMobile?: number | string | boolean;
 }
 
 interface RawIPLItem {
@@ -85,6 +89,8 @@ export default function WargaManager() {
   const [formNoHp, setFormNoHp] = useState("");
   const [formKorwil, setFormKorwil] = useState("");
   const [formTarif, setFormTarif] = useState<number>(110000);
+  const [formFlagFreeIPL, setFormFlagFreeIPL] = useState<number>(1);
+  const [formFlagMobile, setFormFlagMobile] = useState<number>(1);
 
   // State Khusus Riwayat IPL Warga (View Mode)
   const [iplHistory, setIplHistory] = useState<IPLHistoryItem[]>([]);
@@ -93,6 +99,18 @@ export default function WargaManager() {
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3500);
+  };
+
+  // Helper pemeriksa flag Free IPL (0 = Bebas Iuran)
+  const checkIsFreeIPL = (val?: number | string) => {
+    if (val === undefined || val === null) return false;
+    return String(val).trim() === "0" || Number(val) === 0;
+  };
+
+  // Helper pemeriksa flag Mobile (1 / true = Aktif)
+  const checkIsMobileActive = (val?: number | string | boolean) => {
+    if (val === undefined || val === null) return false;
+    return val === 1 || val === "1" || val === true || String(val).toLowerCase() === "true" || String(val).toLowerCase() === "aktif";
   };
 
   // Mengambil master data warga
@@ -106,9 +124,11 @@ export default function WargaManager() {
           Blok: item.Blok || item.BlokID || "",
           Nama: item.Nama || item.NamaAlias || "",
           StatusRumah: item.statusRumah || item.Status || "-",
-          NoHp: item.MobileNo || item.NoHP || item.Telepon || "-",
+          NoHp: item.Mobileno || item.MobileNo || item.NoHP || item.noHp || item.Telepon || "-",
           Korwil: item.Korwil || "Korwil 1",
           Iplamount: item.Iplamount || "110000",
+          flagFreeIPL: item.flagFreeIPL ?? item.flagfeeIPL ?? item.FreeIPL ?? item.freeIPL ?? 1,
+          flagMobile: item.flagMobile ?? item.FlagMobile ?? 0,
         }));
         setListWarga(mapped);
       }
@@ -220,6 +240,8 @@ export default function WargaManager() {
     setFormNoHp("");
     setFormKorwil("Korwil 1");
     setFormTarif(110000);
+    setFormFlagFreeIPL(1);
+    setFormFlagMobile(1);
     setFormError("");
     setIplHistory([]);
     setIsModalOpen(true);
@@ -234,6 +256,8 @@ export default function WargaManager() {
     setFormKorwil(item.Korwil || "Korwil 1");
     const tarif = Number(item.Iplamount) || 110000;
     setFormTarif(tarif);
+    setFormFlagFreeIPL(checkIsFreeIPL(item.flagFreeIPL) ? 0 : 1);
+    setFormFlagMobile(checkIsMobileActive(item.flagMobile) ? 1 : 0);
     setFormError("");
     setIsModalOpen(true);
 
@@ -258,6 +282,8 @@ export default function WargaManager() {
           statusRumah: formStatusRumah,
           noHp: formNoHp.trim(),
           korwil: formKorwil,
+          flagFreeIPL: formFlagFreeIPL,
+          flagMobile: formFlagMobile,
           isEdit: modalMode === "edit",
         }),
       });
@@ -372,7 +398,9 @@ export default function WargaManager() {
                 <th className="px-5 py-3.5 font-bold">No. Blok</th>
                 <th className="px-4 py-3.5 font-bold">Nama Warga</th>
                 <th className="px-4 py-3.5 font-bold">Status Rumah</th>
-                <th className="px-4 py-3.5 font-bold">No. HP</th>
+                <th className="px-4 py-3.5 font-bold">No. HP / WA</th>
+                <th className="px-4 py-3.5 font-bold text-center">Status IPL</th>
+                <th className="px-4 py-3.5 font-bold text-center">Akses Mobile</th>
                 <th className="px-4 py-3.5 font-bold">Korwil</th>
                 <th className="px-5 py-3.5 font-bold text-right">Aksi</th>
               </tr>
@@ -380,67 +408,117 @@ export default function WargaManager() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400">
+                  <td colSpan={8} className="px-5 py-10 text-center text-slate-400">
                     <LoaderCircle className="mx-auto mb-2 animate-spin text-emerald-600" size={20} />
                     Menyinkronkan data warga...
                   </td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-slate-400">
+                  <td colSpan={8} className="px-5 py-8 text-center text-slate-400">
                     Data warga tidak ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredData.map((item, idx) => (
-                  <tr key={`${item.Blok}-${idx}`} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                    <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
-                      <span className="rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        {item.Blok}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 font-semibold text-slate-800 dark:text-slate-200">
-                      {item.Nama || "-"}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                          item.StatusRumah === "Dihuni Sendiri"
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                            : item.StatusRumah === "Sewa / Kontrak"
-                            ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        }`}
-                      >
-                        {item.StatusRumah || "Dihuni Sendiri"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {item.NoHp || "-"}
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {item.Korwil || "-"}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleOpenDetail(item, "view")}
-                          title="Lihat Detail & Riwayat IPL"
-                          className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+                filteredData.map((item, idx) => {
+                  const isFree = checkIsFreeIPL(item.flagFreeIPL);
+                  const isMobile = checkIsMobileActive(item.flagMobile);
+                  const cleanPhone = item.NoHp ? item.NoHp.replace(/[^0-9]/g, "") : "";
+                  const waNumber = cleanPhone.startsWith("0") ? "62" + cleanPhone.slice(1) : cleanPhone;
+
+                  return (
+                    <tr key={`${item.Blok}-${idx}`} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                      <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
+                        <span className="rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          {item.Blok}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-semibold text-slate-800 dark:text-slate-200">
+                        {item.Nama || "-"}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            item.StatusRumah === "Dihuni Sendiri"
+                              ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                              : item.StatusRumah === "Sewa / Kontrak"
+                              ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          }`}
                         >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleOpenDetail(item, "edit")}
-                          title="Edit Data"
-                          className="rounded-lg border border-slate-200 p-1.5 text-emerald-600 hover:bg-emerald-50 dark:border-slate-700 dark:hover:bg-slate-800 transition"
+                          {item.StatusRumah || "Dihuni Sendiri"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-slate-600 dark:text-slate-300">
+                        {item.NoHp && item.NoHp !== "-" ? (
+                          <a
+                            href={`https://wa.me/${waNumber}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-emerald-600 hover:underline dark:text-emerald-400"
+                            title="Kirim Pesan WhatsApp"
+                          >
+                            <Phone size={12} />
+                            {item.NoHp}
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            isFree
+                              ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                              : "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/60 dark:text-amber-300"
+                          }`}
                         >
-                          <Edit3 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {isFree ? (
+                            <>
+                              <ShieldCheck size={11} />
+                              Reguler
+                            </>
+                          ) : (
+                            "FreeIPL"
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            isMobile
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          <Smartphone size={11} />
+                          {isMobile ? "Aktif" : "Non-Aktif"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
+                        {item.Korwil || "-"}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleOpenDetail(item, "view")}
+                            title="Lihat Detail & Riwayat IPL"
+                            className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleOpenDetail(item, "edit")}
+                            title="Edit Data"
+                            className="rounded-lg border border-slate-200 p-1.5 text-emerald-600 hover:bg-emerald-50 dark:border-slate-700 dark:hover:bg-slate-800 transition"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -494,7 +572,7 @@ export default function WargaManager() {
             {modalMode === "view" ? (
               <div className="mt-4 space-y-5">
                 {/* Ringkasan Profil Singkat */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                   <div>
                     <span className="text-[10px] text-slate-400">No. Unit Blok</span>
                     <p className="font-bold text-xs text-slate-900 dark:text-white">{formBlok}</p>
@@ -510,6 +588,18 @@ export default function WargaManager() {
                   <div>
                     <span className="text-[10px] text-slate-400">Tarif IPL Dasar</span>
                     <p className="font-bold text-xs text-emerald-600">{money(formTarif)}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400">Status Beban IPL</span>
+                    <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                      {formFlagFreeIPL === 1 ? "Bebas Iuran (Free IPL)" : "Wajib Bayar (Reguler)"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400">Akses Portal Mobile</span>
+                    <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                      {formFlagMobile === 1 ? "Aktif" : "Non-Aktif"}
+                    </p>
                   </div>
                 </div>
 
@@ -665,15 +755,15 @@ export default function WargaManager() {
                     onChange={(e) => setFormStatusRumah(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-300 bg-white py-2.5 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
-                    <option value="Dihuni Sendiri">Dihuni Sendiri (Pemilik)</option>
-                    <option value="Sewa / Kontrak">Sewa / Kontrak</option>
-                    <option value="Kosong">Rumah Kosong</option>
+                    <option value="HUNI">Dihuni Sendiri (Pemilik)</option>
+                    <option value="KONTRAK">Sewa / Kontrak</option>
+                    <option value="KOSONG">Rumah Kosong</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Nomor WhatsApp / HP
+                    Nomor HP
                   </label>
                   <div className="relative mt-1">
                     <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -696,11 +786,28 @@ export default function WargaManager() {
                     onChange={(e) => setFormKorwil(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-300 bg-white py-2.5 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
-                    <option value="Korwil 1">Korwil 1 (AR.01 - AR.08)</option>
-                    <option value="Korwil 2">Korwil 2 (AR.09 - AR.16)</option>
-                    <option value="Korwil 3">Korwil 3 (AR.17 - AR.24)</option>
-                    <option value="Korwil 4">Korwil 4 (AR.25 - AR.32)</option>
+                    <option value="SUDARMANTO">SUDARMANTO</option>
+                    <option value="ALEX">ALEX</option>
+                    <option value="NIKO">NIKO</option>
+                    <option value="ANDRO">ANDRO</option>
                   </select>
+                </div>
+
+                {/* Input Tambahan: flagFreeIPL dan flagMobile */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Status Beban IPL
+                    </label>
+                    <select
+                      value={formFlagFreeIPL}
+                      onChange={(e) => setFormFlagFreeIPL(Number(e.target.value))}
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white py-2.5 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    >
+                      <option value={0}>0 - Wajib Bayar</option>
+                      <option value={1}>1 - Bebas IPL (Free)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="mt-5 flex gap-2 pt-2">
