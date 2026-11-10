@@ -1,6 +1,6 @@
 {
-    "name": "MyAmarilis Admin",
-    "short_name": "Admin Amarilis",
+    "name": "MyAdmin",
+    "short_name": "MyAmarilis-Admin",
     "description": "Portal Pengurus & Admin Kas RT 07 RW 14 Bukit Amarilis",
     "start_url": "/portal-admin",
     "scope": "/portal-admin",

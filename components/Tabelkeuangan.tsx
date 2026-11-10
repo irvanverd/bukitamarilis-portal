@@ -68,7 +68,7 @@ export default function TransparansiTables() {
   const [selectedBulan, setSelectedBulan] = useState<string>("all");
 
   // Filter Bulan Khusus Top 5 Charts (Default ke bulan berjalan / Februari)
-  const [filterBulanTop, setFilterBulanTop] = useState<string>("Februari");
+  const [filterBulanTop, setFilterBulanTop] = useState<string>("Oktober");
 
   // Filter kategori pengeluaran: "SEMUA" | "RUTIN" | "NON_RUTIN"
 const [filterTipePengeluaran, setFilterTipePengeluaran] = useState<"SEMUA" | "RUTIN" | "NON_RUTIN">("SEMUA");
@@ -280,7 +280,7 @@ const [filterTipePengeluaran, setFilterTipePengeluaran] = useState<"SEMUA" | "RU
   const handleGenerateAiAnalysis = async (forceReload = false) => {
     const cacheKey = `finance-ai-cache-${filterBulanTop}`;
 
-    // 1. Cek cache jika tidak dipaksa reload
+    // 1. Cek cache lokal jika bukan reload paksa
     if (!forceReload && typeof window !== "undefined") {
       const saved = localStorage.getItem(cacheKey);
       if (saved) {
@@ -289,29 +289,40 @@ const [filterTipePengeluaran, setFilterTipePengeluaran] = useState<"SEMUA" | "RU
           setAiAnalysis(parsed.analysis);
           return;
         } catch {
-          // parse fallback
+          // fallback jika bukan JSON
         }
       }
     }
 
-    // 2. Request ke API jika belum ada di cache atau dipaksa reload
     try {
       setLoadingAi(true);
+
+      // 2. OPTIMASI PAYLOAD: Saring hanya dataKeuangan (dashboard.detail) pada bulan aktif
+      const detailRingkas = dataKeuangan
+        .filter((item) => {
+          const val = Number(item[filterBulanTop]) || 0;
+          return val !== 0; // Hanya ambil akun yang ada transaksinya
+        })
+        .map((item) => ({
+          group: item.group || "-",
+          akun: item.account || "-",
+          ket: item.keterangan || "-",
+          nominal: Number(item[filterBulanTop]) || 0,
+        }));
+
+      // 3. Kirim payload ramping
       const res = await fetch("/api/finance-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chartData: dataKas,
-          topPengeluaran,
-          topPenerimaan,
           bulanDipilih: filterBulanTop,
+          detailKeuangan: detailRingkas,
         }),
       });
 
       const json = await res.json();
       if (json.success) {
         setAiAnalysis(json.analysis);
-        // Simpan ke localStorage beserta timestamp
         if (typeof window !== "undefined") {
           localStorage.setItem(
             cacheKey,
@@ -510,7 +521,7 @@ const [filterTipePengeluaran, setFilterTipePengeluaran] = useState<"SEMUA" | "RU
             {/* Header: Judul dan Dropdown Bulan */}
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-rose-600 flex items-center gap-1">
-                🔴 Top 5 Beban
+                🔴 Top 5 Pengeluaran
               </h3>
               <select
                 value={filterBulanTop}
@@ -616,7 +627,7 @@ const [filterTipePengeluaran, setFilterTipePengeluaran] = useState<"SEMUA" | "RU
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
-                🟢 Top 5 Masuk
+                🟢 Top 5 Pemasukan
               </h3>
               <select
                 value={filterBulanTop}
