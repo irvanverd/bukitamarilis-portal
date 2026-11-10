@@ -3,6 +3,7 @@
 import { useState, useMemo, Suspense,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import AdminInstallBanner from "@/components/admin/AdminInstallBanner";
 import InputIPLForm from "@/components/admin/InputIPLForm";
 import Link from "next/link";
 import {
@@ -443,48 +444,9 @@ if (isCheckingAuth) {
 }
 
 return (
-  <div className="flex min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex-col lg:flex-row">
-   
-   {/* POP-UP / BANNER INSTALL APPS (Persis Navbar.tsx) */}
-   {showInstallBanner && (
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-4 py-2.5 shadow-md">
-        <div className="mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-white/20 rounded-lg">
-              <Smartphone size={18} className="text-white" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-semibold">
-                Pasang Aplikasi MyAmarilis Admin
-              </p>
-              <p className="text-[11px] text-emerald-100 hidden sm:block">
-                Akses portal pengurus dan entri data lebih cepat langsung dari layar utama HP Anda.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleInstallClick}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
-            >
-              <Download size={14} />
-              Install
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowInstallBanner(false)}
-              className="p-1 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-colors"
-              aria-label="Tutup banner"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-   
+  <div className="flex min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex-col lg:flex-row"> 
+     {/* Banner akan otomatis muncul saat admin membuka link ini via Chrome */}
+     <AdminInstallBanner /> 
     {/* Toast Alert */}
     {toast && (
       <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl">
@@ -495,6 +457,7 @@ return (
 
     {/* Header Khusus Mobile */}
     <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 lg:hidden">
+      
       <div className="flex items-center gap-2">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-xs font-extrabold text-white">
           ADM

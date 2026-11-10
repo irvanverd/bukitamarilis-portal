@@ -46,8 +46,8 @@ export const metadata: Metadata = {
       {
         // WAJIB URL absolut lengkap (bukan hanya '/og-image.jpg')
         url: "https://myamarilis.id/og-image.jpg",
-        width: 1200,
-        height: 630,
+        width: 800,
+        height: 430,
         alt: "Logo RT 07/XIV Bukit Amarilis",
       },
     ],
