@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import AdminInstallBanner from "@/components/admin/AdminInstallBanner";
 import InputIPLForm from "@/components/admin/InputIPLForm";
+import InputPengeluaran from "@/components/admin/InputPengeluaran";
+import DashboardKeuangan from "@/components/admin/DashboardAdmin";
+
 import Link from "next/link";
 import {
   ArrowDownLeft,
@@ -97,10 +100,9 @@ export const navGroups: NavGroup[] = [
   {
     groupName: "Keuangan",
     items: [
-      { id: "browser-keuangan", label: "Browser Keuangan", icon: Receipt },
-      { id: "input-ipl", label: "Input Transaksi IPL", icon: CreditCard },
-      { id: "pemasukan", label: "Jurnal Kas Masuk", icon: ArrowDownLeft },
-      { id: "pengeluaran", label: "Jurnal Kas Keluar", icon: ArrowUpRight },
+      { id: "browser-keuangan", label: "Rekap Transaksi", icon: Receipt },
+      { id: "input-ipl", label: "Input Pemasukan", icon: CreditCard },
+      { id: "pengeluaran", label: "Input Pengeluaran", icon: ArrowUpRight },
     ],
   },
   {
@@ -398,7 +400,7 @@ const lpjReplacementData = [
   const navItems = [
     { id: "dashboard", label: "Dashboard Ringkasan", icon: LayoutDashboard },
     { id: "warga", label: "Master Data Warga", icon: Users }, // <-- Menu Warga
-    { id: "browser-keuangan", label: "Browser Keuangan", icon: Receipt }, // <-- Tambahkan di sini
+    { id: "browser-keuangan", label: "Transaksi", icon: Receipt }, // <-- Tambahkan di sini
     { id: "input-ipl", label: "Input Transaksi IPL", icon: CreditCard },
     { id: "jurnal-masuk", label: "Jurnal Kas Masuk", icon: ArrowDownLeft },
     { id: "jurnal-keluar", label: "Jurnal Kas Keluar", icon: ArrowUpRight },
@@ -554,275 +556,18 @@ return (
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-7 overflow-y-auto">
-        {/* ================= TAB 1: DASHBOARD ================= */}
-        {activeTab === "warga" && <WargaManager />}
-        {activeTab === "browser-keuangan" && (
-  <KeuanganBrowser
-    onTambahJurnal={(tipe) => {
-      // Mengarahkan langsung ke form jurnal entry sesuai tab
-      if (tipe === "masuk") {
-        setActiveTab("pemasukan");
-      } else {
-        setActiveTab("pengeluaran");
-      }
-    }}
+{/* ================= TAB 2: INPUT IPL ================= */}
+
+{activeTab === "dashboard" && (
+  <DashboardKeuangan 
+    userName="ADMIN"
+    onNavigate={(targetTab) => setActiveTab(targetTab as AdminTab)} 
   />
 )}
-        {activeTab === "dashboard" && (
-          
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-black text-slate-950 dark:text-white">
-                Dashboard Kas & Rekapitulasi
-              </h1>
-              <p className="text-xs text-slate-500">
-                Laporan penerimaan IPL, kas riil RT, dan monitoring korwil unit.
-              </p>
-            </div>
+{activeTab === "warga" && <WargaManager />}
+        {activeTab === "browser-keuangan" && 
+  <KeuanganBrowser/>}
 
-            {/* Saldo & Kas Metrics */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-                  <span>Total Saldo Kas RT</span>
-                  <Wallet size={18} className="text-emerald-600" />
-                </div>
-                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
-                  {money(28450000)}
-                </p>
-                <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
-                  <TrendingUp size={13} /> +12.4% vs bulan lalu
-                </span>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-                  <span>Pemasukan Bulan Ini</span>
-                  <ArrowDownLeft size={18} className="text-emerald-600" />
-                </div>
-                <p className="mt-2 text-2xl font-black text-emerald-600">
-                  {money(10120000)}
-                </p>
-                <p className="mt-2 text-[11px] text-slate-400">92 Transaksi tercatat</p>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-                  <span>Pengeluaran Bulan Ini</span>
-                  <ArrowUpRight size={18} className="text-rose-600" />
-                </div>
-                <p className="mt-2 text-2xl font-black text-rose-600">
-                  {money(4350000)}
-                </p>
-                <p className="mt-2 text-[11px] text-slate-400">Pengeluaran Operasional</p>
-              </div>
-            </div>
-
-            {/* Rekapitulasi IPL by Korwil */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                    Monitoring & Summary IPL per Korwil
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Kepatuhan pembayaran warga periode berjalan (Oktober 2026)
-                  </p>
-                </div>
-                <span className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  Total 110 Unit
-                </span>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {korwilData.map((k, idx) => {
-                  const percent = Math.round((k.lunas / k.totalUnit) * 100);
-                  return (
-                    <div
-                      key={idx}
-                      className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/40"
-                    >
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{k.korwil}</p>
-                      <p className="mt-2 text-lg font-black text-emerald-600">{money(k.nominal)}</p>
-                      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                        <span>Lunas: <strong>{k.lunas}</strong>/{k.totalUnit} unit</span>
-                        <span className="font-bold text-emerald-600">{percent}%</span>
-                      </div>
-                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                        <div
-                          className="h-full rounded-full bg-emerald-600"
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-
-            
-        {/* ================= SECTION CHART KOMPLAIN & PERGANTIAN PJU ================= */}
-<div className="grid gap-6 lg:grid-cols-2">
-  {/* PIE / DONUT CHART: KOMPLAIN BERDASARKAN KATEGORI */}
-  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-    <div className="mb-4">
-      <h3 className="text-base font-bold text-slate-900 dark:text-white">
-        Distribusi Komplain Warga (Dummy)
-      </h3>
-      <p className="text-xs text-slate-400">
-        Persentase keluhan berdasarkan jenis laporan (Total: 31 Laporan)
-      </p>
-    </div>
-
-    <div className="flex flex-col sm:flex-row items-center justify-around gap-6 pt-2">
-      {/* SVG Donut Chart Sederhana */}
-      <div className="relative flex h-44 w-44 shrink-0 items-center justify-center">
-        <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-          {/* Background circle */}
-          <circle
-            cx="18"
-            cy="18"
-            r="15.9155"
-            fill="transparent"
-            stroke="currentColor"
-            strokeWidth="3.8"
-            className="text-slate-100 dark:text-slate-800"
-          />
-          {/* Segmen 1: Fasilitas Umum / PJU (45%) */}
-          <circle
-            cx="18"
-            cy="18"
-            r="15.9155"
-            fill="transparent"
-            stroke="#10b981"
-            strokeWidth="3.8"
-            strokeDasharray="45 55"
-            strokeDashoffset="0"
-          />
-          {/* Segmen 2: Kebersihan (26%) */}
-          <circle
-            cx="18"
-            cy="18"
-            r="15.9155"
-            fill="transparent"
-            stroke="#3b82f6"
-            strokeWidth="3.8"
-            strokeDasharray="26 74"
-            strokeDashoffset="-45"
-          />
-          {/* Segmen 3: Keamanan (16%) */}
-          <circle
-            cx="18"
-            cy="18"
-            r="15.9155"
-            fill="transparent"
-            stroke="#f59e0b"
-            strokeWidth="3.8"
-            strokeDasharray="16 84"
-            strokeDashoffset="-71"
-          />
-          {/* Segmen 4: Drainase (13%) */}
-          <circle
-            cx="18"
-            cy="18"
-            r="15.9155"
-            fill="transparent"
-            stroke="#8b5cf6"
-            strokeWidth="3.8"
-            strokeDasharray="13 87"
-            strokeDashoffset="-87"
-          />
-        </svg>
-
-        {/* Text Center Donut */}
-        <div className="absolute flex flex-col items-center justify-center text-center">
-          <span className="text-2xl font-black text-slate-900 dark:text-white">31</span>
-          <span className="text-[10px] font-semibold text-slate-400">Total Tiket</span>
-        </div>
-      </div>
-
-      {/* Legend & Detail */}
-      <div className="w-full space-y-2.5">
-        {komplainCategoryData.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-3 w-3 rounded-md"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {item.label}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-500">
-              <span className="font-bold text-slate-900 dark:text-white">{item.count}</span>
-              <span className="text-[11px] text-slate-400">({item.percent}%)</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-
-  {/* BAR CHART: REKAPITULASI PERGANTIAN LAMPU LPJ */}
-  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-    <div className="mb-4 flex items-center justify-between">
-      <div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-white">
-          Pergantian Lampu PJU
-        </h3>
-        <p className="text-xs text-slate-400">
-          Frekuensi pemakaian bohlam/fitting lampu jalan per bulan
-        </p>
-      </div>
-      <span className="rounded-xl bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-        Total: 17 Unit Diganti
-      </span>
-    </div>
-
-    {/* Bar Visualizer */}
-    <div className="mt-6 flex h-48 items-end gap-3 sm:gap-5 border-b border-slate-100 pb-3 dark:border-slate-800">
-      {lpjReplacementData.map((bar, idx) => {
-        // Skala tinggi bar: nilai maksimum 10 unit = 100% tinggi
-        const heightPercent = (bar.jumlah / 10) * 100;
-        return (
-          <div
-            key={idx}
-            className="group relative flex flex-1 flex-col items-center justify-end h-full"
-          >
-            {/* Tooltip Angka */}
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-bold text-white shadow-md dark:bg-slate-100 dark:text-slate-900 pointer-events-none">
-              {bar.jumlah} Pcs
-            </div>
-
-            {/* Bilah Bar Chart */}
-            <div
-              style={{ height: `${heightPercent}%` }}
-              className="w-full rounded-xl bg-emerald-500/80 transition-all hover:bg-emerald-600 dark:bg-emerald-600/80 dark:hover:bg-emerald-500"
-            />
-
-            {/* Label Bulan */}
-            <span className="mt-2 text-[11px] font-semibold text-slate-400">
-              {bar.bulan}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-
-    {/* Info Box Footer */}
-    <div className="mt-4 flex items-center justify-between text-[11px] text-slate-500">
-      <span>Rata-rata: <strong>4.6 unit / bulan</strong></span>
-      <span className="font-semibold text-emerald-600">Terbanyak: September (8 Pcs)</span>
-    </div>
-  </div>
-</div>    
-
-          </div>
-
-        )}
-{/* ================= TAB 2: INPUT IPL ================= */}
 {activeTab === "input-ipl" && (
   <div className="space-y-6">
     <InputIPLForm />
@@ -831,276 +576,16 @@ return (
 
         {/* ================= TAB 3: JURNAL MASUK ================= */}
 {activeTab === "pemasukan" && (
-  <div className="max-w-2xl">
-    <div className="mb-6">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-        Jurnal Entry Penerimaan Kas
-      </h1>
-      <p className="text-xs text-slate-500">
-        Pencatatan kas masuk non-IPL (donasi warga, sewa tenda/lapangan, dsb).
-      </p>
-    </div>
-
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          showToast("Kas masuk berhasil dicatat ke buku kas!");
-          setJurnalNominal("");
-          setJurnalKeterangan("");
-          setJurnalMasukFoto("");
-        }}
-        className="space-y-4"
-      >
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Tanggal Transaksi
-          </label>
-          <input
-            type="date"
-            value={jurnalTanggal}
-            onChange={(e) => setJurnalTanggal(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Kategori Pemasukan
-          </label>
-          <select
-            value={jurnalKategori}
-            onChange={(e) => setJurnalKategori(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          >
-            <option value="Donasi / Sumbangan">Donasi / Sumbangan Warga</option>
-            <option value="Sewa Fasilitas">Sewa Tenda / Inventaris RT</option>
-            <option value="Bunga Bank">Bunga Rekening Bank BRI</option>
-            <option value="Lain-lain">Penerimaan Lainnya</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Jumlah Nominal (Rp)
-          </label>
-          <input
-            type="number"
-            required
-            placeholder="Contoh: 500000"
-            value={jurnalNominal}
-            onChange={(e) => setJurnalNominal(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Keterangan
-          </label>
-          <textarea
-            rows={3}
-            required
-            placeholder="Uraian sumber dan keterangan kas masuk"
-            value={jurnalKeterangan}
-            onChange={(e) => setJurnalKeterangan(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          />
-        </div>
-
-        {/* Lampiran Foto Penerimaan Kas (Opsional) */}
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Lampiran Bukti Penerimaan
-            </label>
-            <span className="text-[10px] text-slate-400 font-medium">Opsional</span>
-          </div>
-          <div className="mt-1.5 flex flex-col gap-3">
-            {jurnalMasukFoto ? (
-              <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2">
-                <div className="relative h-40 w-full">
-                  <img
-                    src={jurnalMasukFoto}
-                    alt="Pratinjau Bukti Kas Masuk"
-                    className="h-full w-full object-contain rounded-xl"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setJurnalMasukFoto("")}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-rose-50 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 transition"
-                >
-                  <Trash2 size={14} />
-                  <span>Hapus / Ganti Foto</span>
-                </button>
-              </div>
-            ) : (
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-5 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
-                  <Upload size={16} />
-                </div>
-                <p className="mt-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Upload Bukti Transfer / Kwitansi Masuk
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-400">PNG, JPG, JPEG (Maks. 3 MB)</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileToBase64(e, setJurnalMasukFoto)}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition"
-        >
-          <Plus size={16} /> Catat Kas Masuk
-        </button>
-      </form>
-    </div>
-  </div>
+   <div className="space-y-6">
+   <InputIPLForm />
+ </div>
 )}
 
         {/* ================= TAB 4: JURNAL KELUAR ================= */}
 {activeTab === "pengeluaran" && (
-  <div className="max-w-2xl">
-    <div className="mb-6">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-        Jurnal Entry Pengeluaran Kas
-      </h1>
-      <p className="text-xs text-slate-500">
-        Pencatatan beban operasional, gaji satpam, kebersihan, dan pemeliharaan fasilitas.
-      </p>
-    </div>
-
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          showToast("Kas keluar berhasil dicatat!");
-          setJurnalNominal("");
-          setJurnalKeterangan("");
-          setJurnalKeluarFoto("");
-        }}
-        className="space-y-4"
-      >
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Tanggal Pengeluaran
-          </label>
-          <input
-            type="date"
-            value={jurnalTanggal}
-            onChange={(e) => setJurnalTanggal(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Pos Anggaran Pengeluaran
-          </label>
-          <select
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          >
-            <option>Honor Keamanan / Satpam</option>
-            <option>Petugas Kebersihan Lingkungan</option>
-            <option>Perbaikan Lampu PJU & Kelistrikan</option>
-            <option>Pembelian Perlengkapan / Sarpras</option>
-            <option>Konsumsi & Acara Warga</option>
-            <option>Biaya Admin Bank</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Jumlah Pengeluaran (Rp)
-          </label>
-          <input
-            type="number"
-            required
-            placeholder="Contoh: 250000"
-            value={jurnalNominal}
-            onChange={(e) => setJurnalNominal(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Uraian / Keterangan Pembelian
-          </label>
-          <textarea
-            rows={3}
-            required
-            placeholder="Contoh: Beli 3 pcs lampu LED 40W PJU Blok AR Barat"
-            value={jurnalKeterangan}
-            onChange={(e) => setJurnalKeterangan(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-100"
-          />
-        </div>
-
-        {/* Lampiran Foto Bukti Pengeluaran / Struk / Nota (Opsional) */}
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Lampiran Struk / Nota Pembelian
-            </label>
-            <span className="text-[10px] text-slate-400 font-medium">Opsional</span>
-          </div>
-          <div className="mt-1.5 flex flex-col gap-3">
-            {jurnalKeluarFoto ? (
-              <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2">
-                <div className="relative h-40 w-full">
-                  <img
-                    src={jurnalKeluarFoto}
-                    alt="Pratinjau Nota Pengeluaran"
-                    className="h-full w-full object-contain rounded-xl"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setJurnalKeluarFoto("")}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-rose-50 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 transition"
-                >
-                  <Trash2 size={14} />
-                  <span>Hapus / Ganti Foto</span>
-                </button>
-              </div>
-            ) : (
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-5 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
-                  <Upload size={16} />
-                </div>
-                <p className="mt-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Upload Foto Struk / Faktur Pembayaran
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-400">PNG, JPG, JPEG (Maks. 3 MB)</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileToBase64(e, setJurnalKeluarFoto)}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white shadow-md hover:bg-rose-700 transition"
-        >
-          <Plus size={16} /> Simpan Pengeluaran
-        </button>
-      </form>
-    </div>
-  </div>
+   <div className="space-y-6">
+   <InputPengeluaran />
+ </div>
 )}
 
         {/* ================= TAB 5: SARANA PRASARANA ================= */}

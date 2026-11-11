@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL = process.env.NEXT_APPSCRIPT_API;
 
 export async function GET(req: NextRequest) {
-
   if (!API_URL) {
     return NextResponse.json(
       {
@@ -23,6 +22,9 @@ export async function GET(req: NextRequest) {
     action !== "getFinanceData" &&
     action !== "getFinanceDashboard" &&
     action !== "getFinanceDetail" &&
+    action !== "getCoaCategories" &&
+    action !== "getKeuanganList" && 
+    action !== "getFinanceDashboardadmin" && 
     action !== "getFinanceSummary"
   ) {
     return NextResponse.json(
@@ -35,15 +37,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-
     const controller = new AbortController();
 
     const timeout = setTimeout(() => {
       controller.abort();
     }, 20000);
 
-    const url =
-      `${API_URL}?action=${action}`;
+    // Ambil parameter accType (toleran terhadap variasi case)
+    const accType = searchParams.get("accType") || searchParams.get("acctype");
+
+    // Susun URL dengan meneruskan accType jika tersedia
+    let url = `${API_URL}?action=${encodeURIComponent(action)}`;
+    if (accType) {
+      url += `&accType=${encodeURIComponent(accType)}&acctype=${encodeURIComponent(accType)}`;
+    }
 
     const res = await fetch(url, {
       cache: "no-store",
@@ -79,13 +86,10 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-
       const data = JSON.parse(text);
 
       return NextResponse.json(data);
-
     } catch {
-
       return NextResponse.json(
         {
           success: false,
@@ -96,19 +100,13 @@ export async function GET(req: NextRequest) {
         }
       );
     }
-
   } catch (error) {
-
-    console.error(
-      "Finance API Error:",
-      
-    );
+    console.error("Finance API Error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Tidak dapat terhubung ke server data.",
+        message: "Tidak dapat terhubung ke server data.",
       },
       {
         status: 504,

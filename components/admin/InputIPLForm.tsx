@@ -22,6 +22,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+interface CoaItem {
+  account: string;
+  name: string;
+}
+
 interface WargaOption {
   blok: string;
   nama: string;
@@ -96,7 +101,7 @@ export default function InputIPLForm() {
 
   // Detail Form Transaksi
   const [tanggalBayar, setTanggalBayar] = useState(new Date().toISOString().split("T")[0]);
-  const [caraBayar, setCaraBayar] = useState<"Transfer Bank" | "Tunai / Cash" | "QRIS">("Transfer Bank");
+  const [caraBayar, setCaraBayar] = useState<"Bank" | "Cash" | "QRIS">("Bank");
   const [paymentInfo, setPaymentInfo] = useState("");
   const [lampiranBase64, setLampiranBase64] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -142,6 +147,54 @@ export default function InputIPLForm() {
     }
     loadWarga();
   }, []);
+
+// Default Input Type = IPL, Category default = IPL
+const [inputType, setInputType] = useState<"IPL" | "NON-IPL">("IPL");
+const [account, setCategory] = useState<string>("IPL");
+const [coaList, setCoaList] = useState<{ account: string; name: string }[]>([]);
+const [loadingCoa, setLoadingCoa] = useState<boolean>(false);
+const [manualAmount, setManualAmount] = useState<string>("");
+
+// Ambil data COA saat komponen pertama kali dimuat
+useEffect(() => {
+  const fetchCoa = async () => {
+    try {
+      setLoadingCoa(true);
+      const res = await fetch("/api/finance?action=getCoaCategories&accType=In");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setCoaList(json.data);
+      }
+    } catch (err) {
+      console.error("Gagal memuat kategori COA:", err);
+    } finally {
+      setLoadingCoa(false);
+    }
+  };
+
+  fetchCoa();
+}, []);
+
+const handleInputTypeChange = (val: "IPL" | "NON-IPL") => {
+  setInputType(val);
+  if (val === "IPL") {
+    setCategory("IPL");
+  } else {
+    // Langsung set ke akun pertama daftar COA jika sudah ter-load
+    if (coaList && coaList.length > 0) {
+      setCategory(coaList[0].account);
+    } else {
+      setCategory(""); // Akan terisi begitu fetchCoa selesai
+    }
+  }
+};
+
+// Tambahkan useEffect sinkronisasi jika coaList baru selesai di-fetch setelah user memilih NON-IPL:
+useEffect(() => {
+  if (inputType === "NON-IPL" && (!account || account === "IPL") && coaList.length > 0) {
+    setCategory(coaList[0].account);
+  }
+}, [coaList, inputType, account]);
 
   // Filter Search Unit
   const filteredWargaOptions = useMemo(() => {
@@ -408,6 +461,38 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       return { items, total: totalAmount };
     }
 
+  // ==========================================
+  // JIKA NON-IPL: BYPASS PERULANGAN BULAN
+  // ==========================================
+  if (inputType === "NON-IPL") {
+    const cleanNominal = typeof manualAmount === "string"
+      ? Number(manualAmount.replace(/[^0-9]/g, "")) || 0
+      : Number(manualAmount) || 0;
+
+    const selectedCoa = coaList.find((c) => c.account === account);
+    const namaKategori = selectedCoa ? selectedCoa.name : account;
+
+    // Ambil bulan & tahun saat transaksi dibuat
+    const tglTransaksi = tanggalBayar ? new Date(tanggalBayar) : new Date();
+    const pmonth = tglTransaksi.getMonth() + 1;
+    const pyear = tglTransaksi.getFullYear();
+
+    return {
+      items: cleanNominal > 0 ? [
+        {
+          pyear: pyear,
+          pmonth: pmonth,
+          amount: cleanNominal,
+          keterangan: `${namaKategori}`,
+          isSettlingPending: false
+        }
+      ] : [],
+      total: cleanNominal,
+    };
+  }
+
+    
+
     // C. Pembayaran Bulanan Reguler
     const items = [];
     for (let i = 0; i < jumlahBulanMaju; i++) {
@@ -423,69 +508,158 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         amount: tarif,
         keterangan: `Pembayaran IPL ${BULAN[m - 1]} ${y}`,
         isSettlingPending: false,
+        category: "IPL",
+        account : account
       });
     }
     return { items, total: items.length * tarif };
   }, [currentWarga, paymentType, selectedPending, pendingList, jumlahBulanMaju, startMonth, startYear]);
 
-  // 4. Submit Transaksi
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentWarga || calculation.items.length === 0) return;
+// 4. Submit Transaksi
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setSubmitting(true);
-    setFeedback(null);
+  // Validasi blok khusus untuk IPL (karena IPL wajib per blok/warga)
+  if (inputType === "IPL" && (!currentWarga || !calculation.items || calculation.items.length === 0)) {
+    setFeedback({
+      success: false,
+      msg: "Pilih data warga / unit blok dan pastikan periode pembayaran tersedia.",
+    });
+    return;
+  }
 
-    const payload = {
-      action: "saveIPLTransaction",
-      blok: currentWarga.blok,
-      namaWarga: currentWarga.nama,
-      tanggalBayar,
-      caraBayar,
-      korwil: currentWarga.korwil,
-      paymentInfo: paymentInfo || `Diterima Pengurus via ${caraBayar}`,
-      lampiran: lampiranBase64 || "-",
-      itemsToPay: calculation.items.map((it: any) => ({
-        pyear: it.pyear,
-        pmonth: it.pmonth,
-        amount: it.amount,
-        keterangan: it.keterangan,
-        isSettlingPending: it.isSettlingPending || false,
-        transId: it.transId || undefined,
-        invoiceNo: `INV/${it.pyear}${String(it.pmonth).padStart(2, "0")}/${currentWarga.blok.replace(/[^a-zA-Z0-9]/g, "")}`,
-      })),
-    };
+  // Bersihkan nominal manual untuk NON-IPL
+  const cleanAmount = typeof manualAmount === "string"
+    ? Number(manualAmount.replace(/[^0-9]/g, "")) || 0
+    : Number(manualAmount) || 0;
 
-    try {
-      const res = await fetch("/api/ipl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+  // Validasi khusus untuk NON-IPL
+  if (inputType === "NON-IPL") {
+    if (cleanAmount <= 0) {
+      setFeedback({
+        success: false,
+        msg: "Harap isi nominal penerimaan dengan angka valid.",
       });
-      const json = await res.json();
-
-      if (json.success) {
-        setFeedback({
-          success: true,
-          msg:  json.message,
-        });
-        setSelectedBlok("");
-        setSearchQuery("");
-        setCurrentWarga(null);
-        setPaymentInfo("");
-        handleRemoveImage();
-      } else {
-        setFeedback({
-          success: false,
-          msg: json.message || "Gagal menyimpan data ke Google Sheets.",
-        });
-      }
-    } catch (err: any) {
-      setFeedback({ success: false, msg: err.message || "Terjadi kendala jaringan." });
-    } finally {
-      setSubmitting(false);
+      return;
     }
+    if (!account) {
+      setFeedback({
+        success: false,
+        msg: "Harap pilih Kategori Akun (COA) terlebih dahulu.",
+      });
+      return;
+    }
+  }
+
+  setSubmitting(true);
+  setFeedback(null);
+
+  // Tangani data blok & warga (jika NON-IPL tanpa blok, fallback ke "UMUM")
+  const targetBlok = currentWarga?.blok || "UMUM";
+  const targetNama = currentWarga?.nama || (inputType === "NON-IPL" ? "Penerimaan Non-IPL" : "");
+  const targetKorwil = currentWarga?.korwil || "-";
+  const cleanBlok = targetBlok.replace(/[^a-zA-Z0-9]/g, "");
+  const selectedCoa = coaList.find((c) => c.account === account);
+  const namaKategori = selectedCoa ? selectedCoa.name : account;
+
+  const tglDate = tanggalBayar ? new Date(tanggalBayar) : new Date();
+  const pmonth = tglDate.getMonth() + 1;
+  const pyear = tglDate.getFullYear();
+
+  // Susun itemsToPay sesuai tipe transaksi
+  let finalItemsToPay: any[] = [];
+
+  if (inputType === "NON-IPL") {
+    finalItemsToPay = [
+      {
+        pyear: pyear,
+        pmonth: pmonth,
+        amount: cleanAmount,
+        keterangan: `IN: ${namaKategori}`,
+        isSettlingPending: false,
+        transId: `NONIPL-${Date.now()}`,
+        invoiceNo: `IN/NONIPL/${Date.now()}/${cleanBlok}`,
+      },
+    ];
+  } else {
+    finalItemsToPay = calculation.items.map((it: any) => ({
+      pyear: it.pyear,
+      pmonth: it.pmonth,
+      amount: it.amount,
+      keterangan: it.keterangan,
+      isSettlingPending: it.isSettlingPending || false,
+      transId: it.transId || undefined,
+      invoiceNo: `INV/${it.pyear}${String(it.pmonth).padStart(2, "0")}/${cleanBlok}`,
+    }));
+  }
+
+  const payload = {
+    action: "saveIPLTransaction",
+    blok: targetBlok,
+    namaWarga: "",//targetNama,
+    category: inputType === "IPL" ? "IPL" : "NON-IPL",
+    account: account || (inputType === "IPL" ? "IPL" : ""),
+    tanggalBayar,
+    caraBayar,
+    korwil: targetKorwil,
+    paymentInfo: paymentInfo || `Diterima via ${caraBayar}`,
+    lampiran: lampiranBase64 || "-",
+    itemsToPay: finalItemsToPay,
   };
+
+  try {
+    const res = await fetch("/api/ipl", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+
+    if (json.success) {
+      setFeedback({
+        success: true,
+        msg: json.message || `Transaksi ${inputType} berhasil disimpan!`,
+      });
+      setSelectedBlok("");
+      setSearchQuery("");
+      setCurrentWarga(null);
+      setPaymentInfo("");
+      if (inputType === "NON-IPL") {
+        setManualAmount("");
+      }
+      handleRemoveImage();
+    } else {
+      setFeedback({
+        success: false,
+        msg: json.message || "Gagal menyimpan data ke Google Sheets.",
+      });
+    }
+  } catch (err: any) {
+    setFeedback({ success: false, msg: err.message || "Terjadi kendala jaringan." });
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+  // Helper untuk membersihkan format angka jika pengguna mengetik titik/koma
+const cleanAmount = typeof manualAmount === "string" 
+? Number(manualAmount.replace(/[^0-9]/g, "")) 
+: Number(manualAmount || 0);
+
+// Pengecekan validasi tombol
+const isSubmitDisabled = useMemo(() => {
+  if (submitting) return true;
+
+  if (inputType === "IPL") {
+    // IPL wajib pilih warga & ada item periode
+    return !currentWarga || !calculation?.items || calculation.items.length === 0;
+  } else {
+    // NON-IPL tidak wajib blok, hanya wajib nominal > 0 dan kategori COA valid
+    const isCategoryValid = Boolean(account) && account.trim() !== "" && account !== "IPL";
+    const isAmountValid = !isNaN(cleanAmount) && cleanAmount > 0;
+    return !isCategoryValid || !isAmountValid;
+  }
+}, [submitting, currentWarga, inputType, calculation, account, cleanAmount]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -493,10 +667,10 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       <div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <CreditCard className="text-emerald-600" size={24} />
-          Input & Rekonsiliasi Transaksi IPL
+          Input Transaksi Penerimaan
         </h2>
         <p className="text-xs text-slate-500">
-          Entri pembayaran iuran lingkungan, tagihan berjalan, paket 1 tahun, serta pelunasan tunggakan warga.
+          Entri pembayaran ipl dan transaksi pemasukan lainnya.
         </p>
       </div>
 
@@ -520,7 +694,53 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Pilih Data Unit Warga</h3>
 
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <div className={`grid gap-4 pt-2 ${inputType === "NON-IPL" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+  {/* 1. INPUT TYPE (Pilihan: IPL / NON-IPL) */}
+  <div>
+    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+      Input Type
+    </label>
+    <select
+      value={inputType}
+      onChange={(e) => handleInputTypeChange(e.target.value as "IPL" | "NON-IPL")}
+      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-bold text-slate-800 shadow-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+    >
+      <option value="IPL">IPL</option>
+      <option value="NON-IPL">NON-IPL</option>
+    </select>
+  </div>
+
+  {/* 2. LOOKUP CATEGORY: HANYA TAMPIL JIKA NON-IPL (HIDDEN JIKA IPL) */}
+  {inputType === "NON-IPL" && (
+    <div className="animate-fade-in">
+      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+        Akun Penerimaan
+      </label>
+      <select
+        value={account}
+        onChange={(e) => setCategory(e.target.value)}
+        disabled={loadingCoa}
+        className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+      >
+        {loadingCoa ? (
+          <option value="">Memuat kategori Akun...</option>
+        ) : coaList.length === 0 ? (
+          <option value="">Tidak ada data Akun</option>
+        ) : (
+          coaList.map((c) => (
+            <option key={c.account} value={c.account}>
+              {c.account} - {c.name}
+            </option>
+          ))
+        )}
+      </select>
+    </div>
+  )}
+</div>
+
               {/* Autocomplete Input Search */}
               <div className="relative">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -594,13 +814,42 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 )}
               </div>
 
-              {/* Tarif IPL Display */}
+
+            {/* Tarif IPL Display / Input Amount Manual */}
               <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Tarif IPL Bulanan</label>
-                <div className="mt-1 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                  <span>{currentWarga ? money(currentWarga.iplAmount) : "-"}</span>
-                  {currentWarga && <span className="text-[10px] text-slate-400">Standar Unit</span>}
-                </div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  {inputType === "NON-IPL" ? "Input Amount" : "Tarif IPL Bulanan"}
+                </label>
+
+                {inputType === "NON-IPL" ? (
+                  // JIKA NON-IPL: Input free text manual
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      Rp
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Masukkan nominal (contoh: 150000)"
+                      value={manualAmount}
+                      onChange={(e) => setManualAmount(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-xs font-mono font-bold text-slate-800 shadow-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+                ) : (
+                  // JIKA IPL: Tampilan read-only / display tarif otomatis
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      Rp
+                    </span>
+                    <input
+                      type="text"
+                      disabled
+                      value={Number(currentWarga?.iplAmount || 110000).toLocaleString("id-ID")}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-100 py-2.5 pl-9 pr-3 text-xs font-mono font-bold text-slate-600 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -655,12 +904,12 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 )}
               </div>
             )}
-
           </div>
 
 
           {/* Opsi & Skema Pembayaran */}
-          {currentWarga && (
+        
+          {currentWarga &&  inputType === "IPL" && (
             <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm dark:bg-slate-900 dark:border-slate-800 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Skema Pembayaran</h3>
 
@@ -880,8 +1129,8 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 onChange={(e: any) => setCaraBayar(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 p-2 text-xs font-bold dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-white"
               >
-                <option value="Transfer Bank">Transfer Bank</option>
-                <option value="Tunai / Cash">Tunai / Cash (Via Korwil)</option>
+                <option value="Bank">Transfer Bank</option>
+                <option value="Cash">Cash</option>
               </select>
             </div>
 
@@ -901,7 +1150,7 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             {/* Upload Gambar Bukti Transfer */}
             <div>
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                Bukti Transfer (Upload Foto)
+                Bukti Lampiran (Upload Foto)
               </label>
 
               <input
@@ -920,7 +1169,7 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 >
                   <UploadCloud size={24} className="text-slate-400 group-hover:text-emerald-600 transition" />
                   <span className="mt-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    Pilih Berkas Foto
+                    Pilih Berkas Lampiran
                   </span>
                   <span className="text-[9px] text-slate-400">Format JPG, PNG (Maks 3MB)</span>
                 </label>
@@ -949,35 +1198,45 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               )}
             </div>
 
-            {/* Total Ringkasan Pembayaran */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex justify-between items-center text-xs mb-1">
-                <span className="text-slate-500">Jumlah Periode:</span>
-                <span className="font-bold text-slate-800 dark:text-white">{calculation.items.length} Bulan</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Total Nominal:</span>
-                <span className="text-lg font-black text-emerald-600">{money(calculation.total)}</span>
-              </div>
-            </div>
+          {/* Total Ringkasan Pembayaran */}
+<div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+  {/* Jumlah Periode: Hanya muncul jika IPL */}
+  {inputType === "IPL" && (
+    <div className="flex justify-between items-center text-xs mb-1">
+      <span className="text-slate-500">Jumlah Periode:</span>
+      <span className="font-bold text-slate-800 dark:text-white">
+        {calculation.items.length} Bulan
+      </span>
+    </div>
+  )}
 
-            <button
-              type="submit"
-              disabled={submitting || !currentWarga || calculation.items.length === 0}
-              className="w-full mt-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 transition flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <LoaderCircle className="animate-spin" size={16} />
-                  <span>Mencatat ke G-Sheets...</span>
-                </>
-              ) : (
-                <>
-                  <FileCheck size={16} />
-                  <span>Proses & Simpan Transaksi</span>
-                </>
-              )}
-            </button>
+  {/* Total Nominal: IPL mengambil calculation.total, NON-IPL mengambil input manual */}
+  <div className="flex justify-between items-center">
+    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+      Total Nominal:
+    </span>
+    <span className="text-lg font-black text-emerald-600">
+      {inputType === "NON-IPL"
+        ? money(Number(manualAmount) || 0)
+        : money(calculation.total)}
+    </span>
+  </div>
+</div>
+
+<button
+  type="submit"
+  disabled={isSubmitDisabled}
+  className="w-full mt-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+>
+  {submitting ? (
+    <>
+      <span className="animate-spin">⏳</span>
+      <span>Menyimpan Transaksi...</span>
+    </>
+  ) : (
+    <span>Simpan Transaksi</span>
+  )}
+</button>
 
               {/* MODAL HISTORI PEMBAYARAN IPL */}
       {showHistoryModal && (
