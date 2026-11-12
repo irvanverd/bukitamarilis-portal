@@ -130,13 +130,28 @@ const getFirstDayOfMonthIsoString = () => {
   return `${year}-${month}-01`;
 };
 
-export default function KeuanganBrowser() {
+interface KeuanganBrowserProps {
+  forcedKorwil?: string;
+  allowedTabMode?: "ALL" | "IN_ONLY" | "OUT_ONLY";
+}
+
+
+export default function KeuanganBrowser({
+  forcedKorwil,
+  allowedTabMode = "ALL",
+}: KeuanganBrowserProps) {
   const [data, setData] = useState<KeuanganItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<"IN" | "OUT">("IN");
+  const [activeTab, setActiveTab] = useState<"IN" | "OUT">(
+    allowedTabMode === "OUT_ONLY" ? "OUT" : "IN"
+  );
+  // Set default filterKorwil jika forcedKorwil dikirimkan
+  
   const now = new Date();
   const currentMonthStr = String(now.getMonth() + 1).padStart(2, "0");
   const currentYearStr = String(now.getFullYear());
+
+  
 
   // Default periode ke bulan dan tahun berjalan
   const [filterBulan, setFilterBulan] = useState<string>(currentMonthStr);
@@ -146,7 +161,7 @@ export default function KeuanganBrowser() {
   const [searchQuery, setSearchQuery] = useState("");
   // SET DEFAULT FILTER TANGGAL KE HARI INI
   const [filterTanggal, setFilterTanggal] = useState<string>(getFirstDayOfMonthIsoString());
-  const [filterKorwil, setFilterKorwil] = useState("");
+  const [filterKorwil, setFilterKorwil] = useState<string>(forcedKorwil || "");
   const [filterCaraBayar, setFilterCaraBayar] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterAccountName, setFilterAccountName] = useState("");
@@ -175,71 +190,121 @@ export default function KeuanganBrowser() {
     fetchData();
   }, []);
 
-const filteredData = useMemo(() => {
-  return data
-    .filter((item) => {
-      const cat = (item.Category || "").trim().toUpperCase();
+  useEffect(() => {
+    if (forcedKorwil) {
+      setFilterKorwil(forcedKorwil);
+    }
+  }, [forcedKorwil]);
 
-      // Filter Tab Pemasukan / Pengeluaran
-      if (activeTab === "IN") {
-        if (cat === "OUT" || cat === "PENGELUARAN") return false;
-      } else {
-        if (cat !== "OUT" && cat !== "PENGELUARAN") return false;
-      }
+  useEffect(() => {
+    if (allowedTabMode === "IN_ONLY") {
+      setActiveTab("IN");
+    } else if (allowedTabMode === "OUT_ONLY") {
+      setActiveTab("OUT");
+    }
+  }, [allowedTabMode]);
 
-      // Filter Periode Bulan & Tahun berdasarkan item.Tanggal (format: YYYY-MM-DD)
-      if (item.Tanggal) {
-        const parts = item.Tanggal.split("T")[0].split("-");
-        const itemYear = parts[0];
-        const itemMonth = parts[1];
+  const filteredData = useMemo(() => {
+    // Tentukan tab efektif yang aktif
+    const effectiveTab =
+      allowedTabMode === "IN_ONLY"
+        ? "IN"
+        : allowedTabMode === "OUT_ONLY"
+        ? "OUT"
+        : activeTab;
 
-        if (filterTahun && itemYear !== filterTahun) return false;
-        if (filterBulan && itemMonth !== filterBulan) return false;
-      } else {
-        // Jika data tidak memiliki tanggal dan filter aktif, kecualikan
-        if (filterTahun || filterBulan) return false;
-      }
+    // Tentukan korwil efektif (prioritaskan forcedKorwil jika ada)
+    const effectiveKorwil = (forcedKorwil || filterKorwil || "").trim().toLowerCase();
 
-      // Freetext Search
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchNama = (item.Nama || "").toLowerCase().includes(q);
-        const matchBlok = (item.Blok || "").toLowerCase().includes(q);
-        const matchKet = (item.Keterangan || "").toLowerCase().includes(q);
-        const matchTrans = (item.TransId || "").toLowerCase().includes(q);
-        if (!matchNama && !matchBlok && !matchKet && !matchTrans) return false;
-      }
+    return data
+      .filter((item) => {
+        // 1. FILTER KATEGORI (PEMASUKAN vs PENGELUARAN)
+        const cat = (item.Category || item.Kategori || "").trim().toUpperCase();
+        const isOut = cat === "OUT" || cat === "PENGELUARAN" || cat === "KELUAR";
 
-      // Filter Lainnya
-      if (filterKorwil && item.Korwil !== filterKorwil) return false;
-      if (filterCaraBayar && item.CaraBayar !== filterCaraBayar) return false;
-      if (filterStatus && item.Status !== filterStatus) return false;
-      if (
-        filterAccountName &&
-        item.AccountName !== filterAccountName &&
-        item.Account !== filterAccountName
-      ) {
-        return false;
-      }
+        if (effectiveTab === "IN" && isOut) return false;
+        if (effectiveTab === "OUT" && !isOut) return false;
 
-      return true;
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.Tanggal || 0).getTime();
-      const dateB = new Date(b.Tanggal || 0).getTime();
-      return dateB - dateA;
-    });
-}, [
-  data,
-  activeTab,
-  filterBulan,
-  filterTahun,
-  searchQuery,
-  filterKorwil,
-  filterCaraBayar,
-  filterStatus,
-  filterAccountName,
-]);
+        // 2. FILTER KORWIL (Hanya diterapkan jika effectiveKorwil terisi)
+        if (effectiveKorwil) {
+          const itemKorwil = (item.Korwil || "").trim().toLowerCase();
+          // Jika data tidak punya korwil (misal transaksi kas umum), tolak saat filter korwil aktif
+          if (!itemKorwil) return false;
+
+          const isKorwilMatch =
+            itemKorwil === effectiveKorwil ||
+            itemKorwil.includes(effectiveKorwil) ||
+            effectiveKorwil.includes(itemKorwil);
+
+          if (!isKorwilMatch) return false;
+        }
+
+        // 3. FILTER BULAN & TAHUN (Sesuaikan nama properti tanggal/bulan di data Anda)
+        if (filterBulan) {
+          // Cek dari kolom Bulan atau ekstrak dari Tanggal (YYYY-MM-DD)
+          const itemBulan = item.Bulan
+            ? String(parseInt(String(item.Bulan), 10))
+            : item.Tanggal
+            ? String(parseInt(String(item.Tanggal).split("-")[1] || "0", 10))
+            : "";
+          if (itemBulan && itemBulan !== String(parseInt(filterBulan, 10))) {
+            return false;
+          }
+        }
+
+        if (filterTahun) {
+          const itemTahun = item.Tahun
+            ? String(item.Tahun).trim()
+            : item.Tanggal
+            ? String(item.Tanggal).split("-")[0]
+            : "";
+          if (itemTahun && itemTahun !== String(filterTahun).trim()) {
+            return false;
+          }
+        }
+
+        // 4. FILTER METODE BAYAR / AKUN / STATUS (Jika ada di state Anda)
+        if (filterCaraBayar) {
+          const metode = (item.CaraBayar || item.Metode || "").trim().toLowerCase();
+          if (metode !== filterCaraBayar.trim().toLowerCase()) return false;
+        }
+
+        if (filterStatus) {
+          const st = (item.Status || "").trim().toLowerCase();
+          if (st !== filterStatus.trim().toLowerCase()) return false;
+        }
+
+        // 5. FILTER PENCARIAN TEKS (Blok, Nama, Keterangan)
+        if (searchQuery.trim()) {
+          const q = searchQuery.trim().toLowerCase();
+          const blok = (item.Blok || item.BlokID || "").toLowerCase();
+          const nama = (item.Nama || item.NamaWarga || "").toLowerCase();
+          const ket = (item.Keterangan || item.Uraian || "").toLowerCase();
+
+          if (!blok.includes(q) && !nama.includes(q) && !ket.includes(q)) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.Tanggal || 0).getTime();
+        const dateB = new Date(b.Tanggal || 0).getTime();
+        return dateB - dateA;
+      });
+  }, [
+    data,
+    activeTab,
+    allowedTabMode,
+    forcedKorwil,
+    filterKorwil,
+    filterBulan,
+    filterTahun,
+    filterCaraBayar,
+    filterStatus,
+    searchQuery,
+  ]);
 
   // Ekstrak Opsi Unik untuk Dropdown Filter
   const options = useMemo(() => {
@@ -342,31 +407,36 @@ const filteredData = useMemo(() => {
           </p>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+        {/* TAB BUTTONS DI STICKY HEADER */}
+      <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+        {allowedTabMode !== "OUT_ONLY" && (
           <button
             onClick={() => setActiveTab("IN")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition ${
               activeTab === "IN"
                 ? "bg-emerald-600 text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
             <ArrowDownLeft size={15} />
-            Pemasukan (IPL & Non-IPL)
+            <span>Pemasukan</span>
           </button>
+        )}
+
+        {allowedTabMode !== "IN_ONLY" && (
           <button
             onClick={() => setActiveTab("OUT")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition ${
               activeTab === "OUT"
                 ? "bg-rose-600 text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
             <ArrowUpRight size={15} />
-            Pengeluaran (OUT)
+            <span>Pengeluaran</span>
           </button>
-        </div>
+        )}
+      </div>
       </div>
 
       {/* FILTER CONTROLS */}
@@ -422,23 +492,28 @@ const filteredData = useMemo(() => {
     </select>
   </div>
 
-  {/* Filter Korwil */}
-  <div>
-    <label className="text-[10px] text-slate-400 font-bold block mb-1">Korwil</label>
-    <select
-      value={filterKorwil}
-      onChange={(e) => setFilterKorwil(e.target.value)}
-      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 outline-none"
-    >
-      <option value="">Semua Korwil</option>
-      {options.korwils.map((k) => (
-        <option key={k} value={k}>
-          {k}
-        </option>
-      ))}
-    </select>
-  </div>
-
+ {/* Filter Korwil: Tampilkan badge terkunci jika forcedKorwil aktif, atau dropdown jika bebas */}
+ <div>
+          <label className="text-[10px] text-slate-400 font-bold block mb-1">Korwil</label>
+          {forcedKorwil ? (
+            <div className="w-full p-2 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl text-sky-700 dark:text-sky-300 font-bold truncate">
+              {forcedKorwil} (Terkunci)
+            </div>
+          ) : (
+            <select
+              value={filterKorwil}
+              onChange={(e) => setFilterKorwil(e.target.value)}
+              className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 outline-none"
+            >
+              <option value="">Semua Korwil</option>
+              {options.korwils.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
   {/* Filter Cara Bayar */}
   <div>
     <label className="text-[10px] text-slate-400 font-bold block mb-1">Cara Bayar</label>
@@ -498,6 +573,7 @@ const filteredData = useMemo(() => {
         onClick={() => {
        ; setFilterTanggal(getFirstDayOfMonthIsoString());
         setFilterKorwil("");
+        setFilterKorwil(forcedKorwil || "");
         setFilterCaraBayar("");
         setFilterStatus("");
         setFilterAccountName("");
@@ -523,7 +599,7 @@ const filteredData = useMemo(() => {
         </div>
       ) : (
         <>
-          {/* ========================================================= */}
+{/* ========================================================= */}
 {/* 1. TAMPILAN DESKTOP (TABLE DENGAN FREEZE HEADER & KOLOM)  */}
 {/* ========================================================= */}
 <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -645,73 +721,102 @@ const filteredData = useMemo(() => {
   </div>
 </div>
 
-          {/* ========================================================= */}
-          {/* 2. TAMPILAN MOBILE (RINGKAS & CARD BASED)                 */}
-          {/* ========================================================= */}
-          <div className="block md:hidden space-y-3">
-            {filteredData.map((row) => (
-              <div
-                key={row.rowIndex}
-                className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5"
+          {/* 2. TAMPILAN MOBILE (TABEL RINGKAS 4 KOLOM TANPA INLINE RECONCILE) */}
+<div className="block md:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+  <div className="overflow-x-auto">
+    <table className="w-full text-left text-[11px]">
+      <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
+        <tr>
+          <th className="px-2.5 py-2.5 font-bold">Tanggal</th>
+          <th className="px-2 py-2.5 font-bold">Unit / Nama</th>
+          <th className="px-2 py-2.5 font-bold">Category / Status</th>
+          <th className="px-2.5 py-2.5 font-bold text-right">Cara Bayar / Nominal</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        {filteredData.length === 0 ? (
+          <tr>
+            <td colSpan={4} className="px-3 py-8 text-center text-slate-400">
+              Tidak ada data transaksi yang sesuai filter.
+            </td>
+          </tr>
+        ) : (
+          filteredData.map((item, idx) => {
+            const catUpper = (item.Category || item.Kategori || "").trim().toUpperCase();
+            const isOut = catUpper === "OUT" || catUpper === "PENGELUARAN" || catUpper === "KELUAR";
+            const statusText = (item.Status || "-").trim();
+            const isVerified =
+              statusText.toLowerCase().includes("verif") ||
+              statusText.toLowerCase().includes("reconcil") ||
+              statusText.toLowerCase().includes("lunas") ||
+              statusText.toLowerCase().includes("valid");
+
+            return (
+              <tr
+                key={item.ID || item.id || idx}
+                onClick={() => setSelectedItem(item)}
+                className="active:bg-slate-50 dark:active:bg-slate-800/60"
               >
-                {/* Header Card: Tanggal & Status */}
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono text-slate-400 font-semibold">{row.Tanggal}</span>
-                  {renderStatusBadge(row.Status)}
-                </div>
+                {/* Kolom 1: Tanggal */}
+                <td className="px-2.5 py-3 align-top whitespace-nowrap text-slate-600 dark:text-slate-300 font-medium">
+                  {item.Tanggal || "-"}
+                </td>
 
-                {/* Info Utama: Blok & Nominal */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      {row.Blok || "UMUM"} - {row.Nama || "Non-Warga"}
-                    </h3>
-                    <p className="text-xs text-slate-500">{row.AccountName || row.Account || "-"}</p>
-                  </div>
-                  <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400">
-                    {formatRupiah(row.Amount || 0)}
+                {/* Kolom 2: Unit / Nama */}
+                <td className="px-2.5 py-3 align-top">
+                  {item.Blok || item.BlokID ? (
+                    <span className="inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      {item.Blok || item.BlokID}
+                    </span>
+                  ) : null}
+                  <p className="mt-0.5 font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight">
+                    {item.Nama || item.NamaWarga || item.Keterangan || "-"}
+                  </p>
+                </td>
+
+                {/* Kolom 3: Category / Status (Read-only Badge, tanpa inline edit reconcile) */}
+                <td className="px-2.5 py-3 align-top">
+                  <p className="font-bold text-slate-700 dark:text-slate-200 leading-tight">
+                    {item.Category || item.Kategori || (isOut ? "Pengeluaran" : "IPL")}
+                  </p>
+                  <span
+                    className={`mt-1 inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                      isVerified
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                    }`}
+                  >
+                    {statusText}
                   </span>
-                </div>
+                </td>
 
-                {/* Subinfo: Cara Bayar & Kategori */}
-                <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2">
-                  <span>Cara: <strong className="text-slate-700 dark:text-slate-300">{row.CaraBayar || "-"}</strong></span>
-                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px] font-mono">
-                    {row.Category}
-                  </span>
-                </div>
-
-                {/* Inline Reconcile & Aksi */}
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-1.5 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400">Recon:</span>
-                    <input
-                      type="date"
-                      value={row.ReconcileDate || ""}
-                      disabled={updatingRow === row.rowIndex}
-                      onChange={(e) => handleUpdateReconcileDate(row.rowIndex, e.target.value)}
-                      className="p-1 text-[11px] rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none w-full"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setSelectedItem(row)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      onClick={() => alert(`Edit Transaksi ${row.rowIndex}`)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                {/* Kolom 4: Cara Bayar / Nominal */}
+                <td className="px-2.5 py-3 align-top text-right whitespace-nowrap">
+                  <p className="text-[10px] text-slate-400">
+                    {item.CaraBayar || item.Metode || "-"}
+                  </p>
+                  <p
+                    className={`mt-0.5 font-extrabold ${
+                      isOut
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                  >
+                    {new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                      maximumFractionDigits: 0,
+                    }).format(Number(item.Nominal || item.Amount || 0))}
+                  </p>
+                </td>
+              </tr>
+            );
+          })
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
         </>
       )}
 

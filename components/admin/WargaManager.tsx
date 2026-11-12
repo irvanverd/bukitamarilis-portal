@@ -69,7 +69,11 @@ const money = (val: number) =>
     maximumFractionDigits: 0,
   }).format(val);
 
-export default function WargaManager() {
+  interface WargaManagerProps {
+    forcedKorwil?: string; // <-- Tambahkan definisi prop opsional ini
+  }  
+
+  export default function WargaManager({ forcedKorwil }: WargaManagerProps) {
   const [listWarga, setListWarga] = useState<WargaRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -143,6 +147,13 @@ export default function WargaManager() {
     fetchWarga();
   }, []);
 
+  // Sinkronkan filterKorwil jika forcedKorwil diberikan
+useEffect(() => {
+  if (forcedKorwil) {
+    setFilterKorwil(forcedKorwil);
+  }
+}, [forcedKorwil]);
+
   // Filter pencarian dan korwil
   const filteredData = useMemo(() => {
     return listWarga.filter((w) => {
@@ -153,7 +164,7 @@ export default function WargaManager() {
       const matchKorwil = filterKorwil === "SEMUA" || w.Korwil === filterKorwil;
       return matchQuery && matchKorwil;
     });
-  }, [listWarga, search, filterKorwil]);
+  }, [listWarga, search, forcedKorwil,filterKorwil]);
 
   // Mengambil riwayat IPL unit dari endpoint yang sama dengan portal-warga
   const fetchIPLHistory = async (blokId: string, tarifUnit: number) => {
@@ -375,17 +386,17 @@ export default function WargaManager() {
 
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-slate-400" />
-          <select
-            value={filterKorwil}
-            onChange={(e) => setFilterKorwil(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-          >
-            <option value="SEMUA">Semua Korwil</option>
-            <option value="SUDARMANTO">SUDARMANTO</option>
-            <option value="ALEX">ALEX</option>
-            <option value="NIKO">NIKO</option>
-            <option value="ANDRO">ANDRO</option>
-          </select>
+         {/* Sembunyikan dropdown filter Korwil jika sudah dikunci oleh role KORWIL */}
+{!forcedKorwil && (
+  <select
+    value={filterKorwil}
+    onChange={(e) => setFilterKorwil(e.target.value)}
+    className="..."
+  >
+    <option value="">Semua Korwil</option>
+    {/* ... opsi korwil ... */}
+  </select>
+)}
         </div>
       </div>
 

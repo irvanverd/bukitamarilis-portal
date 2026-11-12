@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 
 interface DashboardProps {
-  // Callback untuk berpindah tab atau memicu modal form
   onNavigate?: (targetTab: string) => void;
   userName?: string;
+  allowedTabs?: string[]; // <-- Tambahkan baris ini
 }
 
 export default function DashboardKeuangan({ onNavigate, userName }: DashboardProps) {
@@ -49,7 +49,7 @@ export default function DashboardKeuangan({ onNavigate, userName }: DashboardPro
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-300 text-xs font-semibold border border-white/10">
             <ShieldCheck size={14} />
-            <span>Portal Manajemen Kas RT</span>
+            <span>MyAmarilis-Admin</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             Selamat Datang, <span className="text-emerald-400">{displayName}</span>! 👋
@@ -90,7 +90,7 @@ export default function DashboardKeuangan({ onNavigate, userName }: DashboardPro
             <div className="mt-6 space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-lg font-black text-slate-900 group-hover:text-emerald-600 transition-colors dark:text-white dark:group-hover:text-emerald-400">
-                  Input Transaksi IPL
+                  Input Transaksi Pemasukan
                 </span>
                 <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                   Pemasukan

@@ -80,8 +80,11 @@ const money = (val: number) =>
     maximumFractionDigits: 0,
   }).format(val);
 
-export default function InputIPLForm() {
-  // Master Data & Search
+  interface InputIPLFormProps {
+    lockKorwil?: string;
+  }
+  
+  export default function InputIPLForm({ lockKorwil }: InputIPLFormProps) {  // Master Data & Search
   const [listWarga, setListWarga] = useState<WargaOption[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -113,8 +116,9 @@ export default function InputIPLForm() {
   const [historyList, setHistoryList] = useState<TransactionHistoryItem[]>([]);
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   
-  // 1. Ambil Master Data Warga
+  // 1. Ambil Master Data Warga (difilter sesuai lockKorwil jika ada)
   useEffect(() => {
+    console.log("DEBUG InputIPLForm -> lockKorwil:", lockKorwil);
     async function loadWarga() {
       try {
         const res = await fetch("/api/warga");
@@ -127,18 +131,33 @@ export default function InputIPLForm() {
             const blokClean = (w.Blok || w.BlokID || "").toString().trim();
             if (!blokClean || seenBlok.has(blokClean)) return;
 
+            const wargaKorwil = (w.Korwil || "Korwil 1").toString().trim();
+
+            // Jika lockKorwil terisi, lewati warga di luar wilayah korwil tersebut
+            if (
+              lockKorwil &&
+              wargaKorwil.toLowerCase() !== lockKorwil.trim().toLowerCase()
+            ) {
+              return;
+            }
+
             seenBlok.add(blokClean);
             mapped.push({
               blok: blokClean,
               nama: (w.Nama || w.NamaAlias || "-").toString().trim(),
-              korwil: w.Korwil || "Korwil 1",
+              korwil: wargaKorwil,
               iplAmount: Number(w.Iplamount) || 110000,
               // Ambil nilai FreeIPL (default 1 jika tidak ada/berisi string angka)
-              freeIPL: w.flagFreeIPL !== undefined && w.flagFreeIPL !== null ? Number(w.flagFreeIPL) : 1,
+              freeIPL:
+                w.flagFreeIPL !== undefined && w.flagFreeIPL !== null
+                  ? Number(w.flagFreeIPL)
+                  : 1,
             });
           });
 
-          mapped.sort((a, b) => a.blok.localeCompare(b.blok, undefined, { numeric: true }));
+          mapped.sort((a, b) =>
+            a.blok.localeCompare(b.blok, undefined, { numeric: true })
+          );
           setListWarga(mapped);
         }
       } catch (err) {
@@ -146,8 +165,7 @@ export default function InputIPLForm() {
       }
     }
     loadWarga();
-  }, []);
-
+  }, [lockKorwil]);
 // Default Input Type = IPL, Category default = IPL
 const [inputType, setInputType] = useState<"IPL" | "NON-IPL">("IPL");
 const [account, setCategory] = useState<string>("IPL");

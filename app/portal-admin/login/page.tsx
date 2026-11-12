@@ -4,83 +4,42 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, User, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 
-// 1. Data User & Hak Akses Hardcoded
 interface AdminUser {
+  userid: string;
   username: string;
-  role: "admin" | "korwil" | "bendahara";
+  role: string;
   nama: string;
+  mobileno?: string;
+  korwil?: string;
   allowedTabs: string[];
 }
 
-const STATIC_USERS: Record<string, AdminUser> = {
-  // Full Akses
-  ADMIN: {
-    username: "ADMIN",
-    role: "admin",
-    nama: "Administrator Utama",
-    allowedTabs: [
-      "dashboard",
-      "browser-keuangan",
-      "input-ipl",
-      "pemasukan",
-      "pengeluaran",
-      "warga",
-      "users",
-      "sarpras",
-      "komplain",
-      "surat",
-    ],
-  },
-  // Role Korwil: Input-ipl, Data Warga, Komplain
-  ALEX: {
-    username: "ALEX",
-    role: "korwil",
-    nama: "Alex (Korwil)",
-    allowedTabs: ["dashboard", "input-ipl", "warga", "komplain"],
-  },
-  SUDARMANTO: {
-    username: "SUDARMANTO",
-    role: "korwil",
-    nama: "Sudarmanto (Korwil)",
-    allowedTabs: ["dashboard", "input-ipl", "warga", "komplain"],
-  },
-  NIKO: {
-    username: "NIKO",
-    role: "korwil",
-    nama: "Niko (Korwil)",
-    allowedTabs: ["dashboard", "input-ipl", "warga", "komplain"],
-  },
-  ANDRO: {
-    username: "ANDRO",
-    role: "korwil",
-    nama: "Andro (Korwil)",
-    allowedTabs: ["dashboard", "input-ipl", "warga", "komplain"],
-  },
-  // Role Bendahara: Keuangan, Pemasukan, Pengeluaran
-  QORI: {
-    username: "QORI",
-    role: "bendahara",
-    nama: "Qori (Bendahara)",
-    allowedTabs: [
-      "dashboard",
-      "browser-keuangan",
-      "input-ipl",
-      "pemasukan",
-      "pengeluaran",
-    ],
-  },
-  ARMIYA: {
-    username: "ARMIYA",
-    role: "bendahara",
-    nama: "Armiya (Bendahara)",
-    allowedTabs: [
-      "dashboard",
-      "browser-keuangan",
-      "input-ipl",
-      "pemasukan",
-      "pengeluaran",
-    ],
-  },
+// Mapping Tab Hak Akses berdasarkan Role dari sheet_user
+const ROLE_ALLOWED_TABS: Record<string, string[]> = {
+  ADMIN: [
+    "dashboard",
+    "browser-keuangan",
+    "bankbook",
+    "input-ipl",
+    "pemasukan",
+    "pengeluaran",
+    "warga",
+    "users",
+    "sarpras",
+    "komplain",
+    "surat",
+  ],
+  KORWIL: ["dashboard", "input-ipl", "browser-keuangan", "warga", "komplain"],
+  "BEND-IN": ["dashboard", "browser-keuangan", "input-ipl", "pemasukan", "warga"],
+  "BEND-OUT": ["dashboard", "browser-keuangan", "pengeluaran"],
+  BENDAHARA: [
+    "dashboard",
+    "browser-keuangan",
+    "bankbook",
+    "input-ipl",
+    "pemasukan",
+    "pengeluaran",
+  ],
 };
 
 export default function AdminLoginPage() {
@@ -91,40 +50,64 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setIsLoading(true);
 
     const cleanUser = username.trim().toUpperCase();
 
-    // Validasi User & Password
-    if (!STATIC_USERS[cleanUser]) {
-      setErrorMsg("Username tidak terdaftar sebagai petugas.");
+    try {
+      // Panggil API untuk cek user & password ke sheet_user
+      const res = await fetch("/api/ipl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "loginAdminUser",
+          userid: cleanUser,
+          passwd: password,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!json.success || !json.user) {
+        setErrorMsg(json.message || "User ID atau kata sandi tidak sesuai.");
+        setIsLoading(false);
+        return;
+      }
+
+      const dbUser = json.user;
+      const normalizedRole = String(dbUser.role || "").trim().toUpperCase();
+
+      // Susun struktur session yang sama dengan metode sebelumnya
+      const userData: AdminUser = {
+        userid: dbUser.userid,
+        username: dbUser.userid,
+        role: normalizedRole.toLowerCase(),
+        nama: dbUser.username || dbUser.userid,
+        mobileno: dbUser.mobileno || "",
+        korwil: dbUser.korwil || "",
+        allowedTabs: ROLE_ALLOWED_TABS[normalizedRole] || ["dashboard"],
+      };
+
+      // Simpan Sesi Login ke LocalStorage
+      localStorage.setItem(
+        "admin_session",
+        JSON.stringify({
+          ...userData,
+          loginAt: new Date().toISOString(),
+        })
+      );
+
+      // Redirect ke Halaman Portal Admin
+      setTimeout(() => {
+        router.replace("/portal-admin");
+      }, 300);
+    } catch (err: any) {
+      setErrorMsg("Gagal terhubung ke server autentikasi. Periksa koneksi internet.");
       setIsLoading(false);
-      return;
     }
-
-    if (password !== "1234") {
-      setErrorMsg("Kata sandi salah. Silakan coba lagi.");
-      setIsLoading(false);
-      return;
-    }
-
-    // Simpan Sesi Login ke LocalStorage
-    const userData = STATIC_USERS[cleanUser];
-    localStorage.setItem(
-      "admin_session",
-      JSON.stringify({
-        ...userData,
-        loginAt: new Date().toISOString(),
-      })
-    );
-
-    // Redirect ke Halaman Portal Admin
-    setTimeout(() => {
-      router.replace("/portal-admin");
-    }, 500);
   };
 
   return (
@@ -139,7 +122,7 @@ export default function AdminLoginPage() {
             Portal Admin RT
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Bukit Amarilis · Akses Petugas & Pengurus
+            Bukit Amarilis · Akses Petugas &amp; Pengurus
           </p>
         </div>
 
@@ -155,7 +138,7 @@ export default function AdminLoginPage() {
         <form onSubmit={handleLogin} className="mt-5 space-y-4">
           <div>
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Username
+              User ID
             </label>
             <div className="relative mt-1">
               <User
@@ -165,6 +148,7 @@ export default function AdminLoginPage() {
               <input
                 type="text"
                 required
+                placeholder="Masukkan User ID"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3.5 text-xs font-bold uppercase text-slate-800 placeholder:normal-case placeholder:font-normal focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
@@ -204,7 +188,7 @@ export default function AdminLoginPage() {
             disabled={isLoading}
             className="mt-2 flex w-full items-center justify-center rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-50 transition"
           >
-            {isLoading ? "Memproses..." : "Masuk ke Sistem"}
+            {isLoading ? "Memverifikasi..." : "Masuk ke Sistem"}
           </button>
         </form>
       </div>
