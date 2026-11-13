@@ -101,7 +101,7 @@ export default function InputPengeluaran() {
 
   // Detail Form Transaksi
   const [tanggalBayar, setTanggalBayar] = useState(new Date().toISOString().split("T")[0]);
-  const [caraBayar, setCaraBayar] = useState<"Bank" | "Cash" | "QRIS">("Bank");
+  const [caraBayar, setCaraBayar] = useState<"Kas" | "Kas" | "Kas">("Kas");
   const [paymentInfo, setPaymentInfo] = useState("");
   const [lampiranBase64, setLampiranBase64] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -149,7 +149,7 @@ export default function InputPengeluaran() {
   }, []);
 
 // Default Input Type = IPL, Category default = IPL
-const [inputType, setInputType] = useState<"IPL" | "NON-IPL">("IPL");
+const [inputType, setInputType] = useState<"NON-IPL" | "NON-IPL">("NON-IPL");
 const [account, setCategory] = useState<string>("IPL");
 const [coaList, setCoaList] = useState<{ account: string; name: string }[]>([]);
 const [loadingCoa, setLoadingCoa] = useState<boolean>(false);
@@ -175,9 +175,9 @@ useEffect(() => {
   fetchCoa();
 }, []);
 
-const handleInputTypeChange = (val: "IPL" | "NON-IPL") => {
+const handleInputTypeChange = (val: "NON-IPL" | "NON-IPL") => {
   setInputType(val);
-  if (val === "IPL") {
+  if (val === "NON-IPL") {
     setCategory("IPL");
   } else {
     // Langsung set ke akun pertama daftar COA jika sudah ter-load
@@ -416,15 +416,6 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
-  // Validasi blok khusus untuk IPL (karena IPL wajib per blok/warga)
-  if (inputType === "IPL" && (!currentWarga || !calculation.items || calculation.items.length === 0)) {
-    setFeedback({
-      success: false,
-      msg: "Pilih data warga / unit blok dan pastikan periode pembayaran tersedia.",
-    });
-    return;
-  }
-
   // Bersihkan nominal manual untuk NON-IPL
   const cleanAmount = typeof manualAmount === "string"
     ? Number(manualAmount.replace(/[^0-9]/g, "")) || 0
@@ -452,14 +443,18 @@ const handleSubmit = async (e: React.FormEvent) => {
   setFeedback(null);
 
   // Tangani data blok & warga (jika NON-IPL tanpa blok, fallback ke "UMUM")
-  const targetBlok = currentWarga?.blok || "UMUM";
-  const targetNama = currentWarga?.nama || (inputType === "NON-IPL" ? "Penerimaan Non-IPL" : "");
+  const targetBlok = currentWarga?.blok || "0";
+  const targetNama = currentWarga?.nama || (inputType === "NON-IPL" ? "Pengeluaran" : "");
   const targetKorwil = currentWarga?.korwil || "-";
   const cleanBlok = targetBlok.replace(/[^a-zA-Z0-9]/g, "");
 
   const tglDate = tanggalBayar ? new Date(tanggalBayar) : new Date();
   const pmonth = tglDate.getMonth() + 1;
   const pyear = tglDate.getFullYear();
+
+  
+  const selectedCoa = coaList.find((c) => c.account === account);
+  const namaKategori = selectedCoa ? selectedCoa.name : account;
 
   // Susun itemsToPay sesuai tipe transaksi
   let finalItemsToPay: any[] = [];
@@ -470,10 +465,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         pyear: pyear,
         pmonth: pmonth,
         amount: cleanAmount,
-        keterangan: `Penerimaan Non-IPL: ${account}`,
+        keterangan: `${namaKategori}`,
         isSettlingPending: false,
-        transId: `NONIPL-${Date.now()}`,
-        invoiceNo: `INV/NONIPL/${Date.now()}/${cleanBlok}`,
+        transId: `OUT-${Date.now()}`,
+        invoiceNo: `OUT/${Date.now()}/${cleanBlok}`,
       },
     ];
   } else {
@@ -484,7 +479,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       keterangan: it.keterangan,
       isSettlingPending: it.isSettlingPending || false,
       transId: it.transId || undefined,
-      invoiceNo: `INV/${it.pyear}${String(it.pmonth).padStart(2, "0")}/${cleanBlok}`,
+      invoiceNo: `OUT/${it.pyear}${String(it.pmonth).padStart(2, "0")}/${cleanBlok}`,
     }));
   }
 
@@ -592,8 +587,8 @@ const isSubmitDisabled = useMemo(() => {
   <div>
     <select
       value={inputType}
-      onChange={(e) => handleInputTypeChange(e.target.value as "NON-IPL")}
       hidden
+      onChange={(e) => handleInputTypeChange(e.target.value as "NON-IPL")}
       className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-bold text-slate-800 shadow-sm outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
     >
       <option value="NON-IPL">NON-IPL</option>
@@ -628,7 +623,7 @@ const isSubmitDisabled = useMemo(() => {
               {/* Autocomplete Input Search */}
               <div className="relative">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Cari Blok / Nama Warga
+                  Cari Blok / Nama Warga (optional)
                 </label>
                 <div className="relative mt-1">
                   <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />

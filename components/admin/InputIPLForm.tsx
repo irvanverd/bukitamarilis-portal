@@ -1148,7 +1148,7 @@ const isSubmitDisabled = useMemo(() => {
                 className="mt-1 w-full rounded-xl border border-slate-300 p-2 text-xs font-bold dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-white"
               >
                 <option value="Bank">Transfer Bank</option>
-                <option value="Cash">Cash</option>
+                <option value="IplCash">Cash</option>
               </select>
             </div>
 
