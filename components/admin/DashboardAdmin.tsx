@@ -139,7 +139,7 @@ export default function DashboardKeuangan({ onNavigate, userName }: DashboardPro
       {/* ================= SHORTCUT BROWSER / WARGA ================= */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
         <span className="text-xs text-slate-500 text-center sm:text-left">
-          Perlu melihat mutasi rekening atau data kependudukan?
+          Perlu melihat rekap transaksi atau data kependudukan?
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -148,7 +148,7 @@ export default function DashboardKeuangan({ onNavigate, userName }: DashboardPro
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition shadow-sm"
           >
             <FileSpreadsheet size={13} className="text-emerald-600" />
-            <span>Browser Keuangan</span>
+            <span>Rekap Transaksi</span>
           </button>
           <button
             type="button"

@@ -119,10 +119,10 @@ export default function AdminLoginPage() {
             <ShieldCheck size={26} />
           </div>
           <h1 className="mt-4 text-xl font-black tracking-tight text-slate-900 dark:text-white">
-            Portal Admin RT
+            MyAdmin
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Bukit Amarilis · Akses Petugas &amp; Pengurus
+            MyAmarilis Admin · Akses Petugas &amp; Pengurus
           </p>
         </div>
 
