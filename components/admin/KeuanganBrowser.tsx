@@ -51,6 +51,7 @@ const NAMA_BULAN = [
   { value: "12", label: "Desember" },
 ];
 
+
 const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: any }> = {
   C: {
     label: "Reconcile",
@@ -80,6 +81,30 @@ const formatRupiah = (val: number) => {
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(val || 0);
+};
+
+const getDirectDriveImageUrl = (url?: string): string => {
+  if (!url) return "";
+  const cleanUrl = url.trim();
+  if (!cleanUrl || cleanUrl === "-") return "";
+
+  // Jika sudah berupa base64 data:image, kembalikan langsung
+  if (cleanUrl.startsWith("data:image")) return cleanUrl;
+
+  // Ekstrak FILE_ID dari berbagai format link Google Drive:
+  // 1. https://drive.google.com/file/d/FILE_ID/view...
+  // 2. https://drive.google.com/open?id=FILE_ID
+  // 3. https://drive.google.com/uc?id=FILE_ID
+  const fileIdMatch =
+    cleanUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+    cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+  if (fileIdMatch && fileIdMatch[1]) {
+    // Endpoint thumbnail sz=w1000 menghasilkan stream gambar langsung tanpa diblokir CORS/iframe
+    return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1000`;
+  }
+
+  return cleanUrl;
 };
 
 const formatDateDisplay = (dateStr?: string) => {
@@ -133,18 +158,46 @@ const getFirstDayOfMonthIsoString = () => {
 interface KeuanganBrowserProps {
   forcedKorwil?: string;
   allowedTabMode?: "ALL" | "IN_ONLY" | "OUT_ONLY";
-}
+  userRole?: string; // Opsional jika dikirim dari portal-admin/page.tsx
 
+}
 
 export default function KeuanganBrowser({
   forcedKorwil,
   allowedTabMode = "ALL",
+  userRole, // <-- Tambahkan parameter ini di sini
 }: KeuanganBrowserProps) {
   const [data, setData] = useState<KeuanganItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"IN" | "OUT">(
     allowedTabMode === "OUT_ONLY" ? "OUT" : "IN"
   );
+
+  const [sessionRole, setSessionRole] = useState<string>(userRole || "");
+
+  useEffect(() => {
+    if (userRole) {
+      setSessionRole(userRole);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem("admin_session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setSessionRole(String(parsed?.role || ""));
+      }
+    } catch (e) {
+      console.error("Gagal membaca role dari session:", e);
+    }
+  }, [userRole]);
+
+  // Hanya role ADMIN atau BEND-IN yang diizinkan melakukan reconcile
+  const canReconcile = useMemo(() => {
+    const r = (sessionRole || "").trim().toUpperCase();
+    return r === "ADMIN" || r === "BEND-IN";
+  }, [sessionRole]);
+  
+  
   // Set default filterKorwil jika forcedKorwil dikirimkan
   
   const now = new Date();
@@ -169,26 +222,50 @@ export default function KeuanganBrowser({
   // Modal Detail & Inline Editing States
   const [selectedItem, setSelectedItem] = useState<KeuanganItem | null>(null);
   const [updatingRow, setUpdatingRow] = useState<number | null>(null);
+  const [cancelingRow, setCancelingRow] = useState<boolean>(false);
 
-  // 1. Fetch Data dari API Next.js / Apps Script
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/finance?action=getKeuanganList");
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setData(json.data);
-      }
-    } catch (err) {
-      console.error("Gagal memuat list keuangan:", err);
-    } finally {
-      setLoading(false);
+
+// 1. Fetch Data dari API Next.js / Apps Script berdasarkan filter periode aktif
+const fetchData = async (bulanParam?: string, tahunParam?: string) => {
+  try {
+    setLoading(true);
+    const params = new URLSearchParams({
+      action: "getKeuanganList",
+    });
+
+    // Kirim parameter bulan (konversi "01" -> "1", kosongkan jika "Semua Bulan")
+    if (bulanParam) {
+      params.set("bulan", String(parseInt(bulanParam, 10)));
     }
-  };
+    // Kirim parameter tahun (kosongkan jika "Semua Tahun")
+    if (tahunParam) {
+      params.set("tahun", tahunParam);
+    }
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+    const res = await fetch(`/api/finance?${params.toString()}`, {
+      cache: "no-store",
+    });
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data)) {
+      setData(json.data);
+    } else {
+      setData([]);
+    }
+  } catch (err) {
+    console.error("Gagal memuat list keuangan:", err);
+    setData([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Otomatis panggil API saat pertama kali dibuka (default bulan & tahun berjalan)
+// dan setiap kali dropdown Periode Bulan atau Periode Tahun diubah
+useEffect(() => {
+  fetchData(filterBulan, filterTahun);
+}, [filterBulan, filterTahun]);
+
+
 
   useEffect(() => {
     if (forcedKorwil) {
@@ -203,6 +280,7 @@ export default function KeuanganBrowser({
       setActiveTab("OUT");
     }
   }, [allowedTabMode]);
+
 
   const filteredData = useMemo(() => {
     // Tentukan tab efektif yang aktif
@@ -326,30 +404,41 @@ export default function KeuanganBrowser({
   }, [data]);
 
   const availableYears = useMemo(() => {
-    const yearSet = new Set<string>();
-    yearSet.add(String(new Date().getFullYear()));
-  
+    const currentYear = new Date().getFullYear();
+    const yearSet = new Set<string>([
+      String(currentYear),
+      String(currentYear - 1),
+      "2025",
+      "2026",
+    ]);
+
     data.forEach((d) => {
       if (d.Tanggal) {
         const y = d.Tanggal.split("T")[0].split("-")[0];
         if (y && y.length === 4) yearSet.add(y);
       }
     });
-  
+
     return Array.from(yearSet).sort((a, b) => Number(b) - Number(a));
   }, [data]);
 
-  // 3. Inline Edit: Update Reconcile Date
+  // 3. Inline Edit & Modal Edit: Update Reconcile Date (Khusus ADMIN & BEND-IN)
   const handleUpdateReconcileDate = async (rowIndex: number, newDate: string) => {
+    if (!canReconcile) {
+      alert("Akses ditolak: Hanya ADMIN atau BEND-IN yang dapat mengubah Reconcile Date.");
+      return;
+    }
+
     try {
       setUpdatingRow(rowIndex);
-      // Auto-set status ke "C" (Reconciled) jika tanggal diisi, atau balik ke "O" jika dikosongkan
+      // Auto-set status ke "C" (Reconciled) jika tanggal diisi, atau balik ke "R" jika dikosongkan
       const newStatus = newDate ? "C" : "R";
 
-      const res = await fetch("/api/finance?action=updateReconcileDate", {
+      const res = await fetch("/api/ipl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "updateReconcileDate",
           rowIndex,
           reconcileDate: newDate,
           status: newStatus,
@@ -358,7 +447,7 @@ export default function KeuanganBrowser({
 
       const resJson = await res.json();
       if (resJson.success) {
-        // Optimistic UI Update
+        // Update daftar tabel utama
         setData((prev) =>
           prev.map((row) =>
             row.rowIndex === rowIndex
@@ -366,13 +455,61 @@ export default function KeuanganBrowser({
               : row
           )
         );
+
+        // Update juga state modal detail jika sedang terbuka untuk baris ini
+        setSelectedItem((prev) =>
+          prev && prev.rowIndex === rowIndex
+            ? { ...prev, ReconcileDate: newDate, Status: newStatus }
+            : prev
+        );
       } else {
         alert("Gagal update rekonsiliasi: " + resJson.message);
       }
     } catch (err: any) {
-      alert("Error inline edit: " + err.message);
+      alert("Error update reconcile: " + err.message);
     } finally {
       setUpdatingRow(null);
+    }
+  };
+  // 4. Cancel Transaksi -> Ubah Status menjadi "X" (hanya jika Status !== "C")
+  const handleCancelTransaction = async (item: KeuanganItem) => {
+    const currentStatus = (item.Status || "").trim().toUpperCase();
+    if (currentStatus === "C") {
+      alert("Transaksi berstatus Reconcile (C) tidak dapat dibatalkan.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Apakah Anda yakin ingin membatalkan transaksi ini?`
+    );
+    if (!confirmed) return;
+
+    try {
+      setCancelingRow(true);
+      const res = await fetch("/api/ipl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action:"cancelKeuanganItem",
+          rowIndex: item.rowIndex,
+        }),
+      });
+
+      const resJson = await res.json();
+      if (resJson.success) {
+        setData((prev) =>
+          prev.map((row) =>
+            row.rowIndex === item.rowIndex ? { ...row, Status: "X" } : row
+          )
+        );
+        setSelectedItem(null);
+      } else {
+        alert("Gagal membatalkan transaksi: " + (resJson.message || "Unknown error"));
+      }
+    } catch (err: any) {
+      alert("Error saat membatalkan transaksi: " + err.message);
+    } finally {
+      setCancelingRow(false);
     }
   };
 
@@ -540,10 +677,10 @@ export default function KeuanganBrowser({
       className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 outline-none"
     >
       <option value="">Semua Status</option>
-      <option value="C">Reconcile (C)</option>
-      <option value="O">Open (O)</option>
-      <option value="R">Release (R)</option>
-      <option value="X">Cancel (X)</option>
+      <option value="C">Reconcile</option>
+      <option value="O">Open</option>
+      <option value="R">Release</option>
+      <option value="X">Cancel</option>
     </select>
   </div>
 
@@ -706,7 +843,7 @@ export default function KeuanganBrowser({
                   <Eye size={15} />
                 </button>
                 <button
-                  onClick={() => alert(`Edit Form Transaksi baris: ${row.rowIndex}`)}
+                  onClick={() => setSelectedItem(row)}
                   title="Edit Transaksi"
                   className="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-slate-800 transition"
                 >
@@ -886,13 +1023,57 @@ export default function KeuanganBrowser({
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {selectedItem.CaraBayar || "-"}
             </span>
+
             {selectedItem.Korwil && (
               <span className="block text-[10px] text-slate-400">
                 Korwil: {selectedItem.Korwil}
               </span>
             )}
+
+            {/* Reconcile Date (Hanya dapat diakses oleh ADMIN atau BEND-IN) */}
+          {canReconcile ? (
+            <div className="col-span-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-bold tracking-wider">
+                  Tanggal rek.koran
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+              {selectedItem.ReconcileDate && (
+                  <button
+                    type="button"
+                    disabled={updatingRow === selectedItem.rowIndex}
+                    onClick={() => handleUpdateReconcileDate(selectedItem.rowIndex, "")}
+                    title="Kosongkan Reconcile Date"
+                    className="px-2 py-1.5 rounded-xl bg-slate-200 hover:bg-rose-100 hover:text-rose-600 dark:bg-slate-700 dark:text-slate-300 text-[11px] font-bold transition disabled:opacity-50"
+                  >
+                    Reset
+                  </button>
+                )}
+                <input
+                  type="date"
+                  value={selectedItem.ReconcileDate ? String(selectedItem.ReconcileDate).split("T")[0] : ""}
+                  disabled={updatingRow === selectedItem.rowIndex}
+                  onChange={(e) =>
+                    handleUpdateReconcileDate(selectedItem.rowIndex, e.target.value)
+                  }
+                  className="px-2.5 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 disabled:opacity-50"
+                />
+              
+              </div>
+            </div>
+          ) : (
+            <div className="col-span-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 font-semibold">Reconcile Date</span>
+              <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                {selectedItem.ReconcileDate || "-"}
+              </span>
+            </div>
+          )}
+
           </div>
           <div className="col-span-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+    
             <span className="text-xs font-bold text-slate-500">Total Nominal:</span>
             <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-base">
               {formatRupiah(selectedItem.Amount || 0)}
@@ -918,66 +1099,93 @@ export default function KeuanganBrowser({
         )}
 
         {/* ========================================================= */}
-        {/* PREVIEW LAMPIRAN / BUKTI PEMBAYARAN                      */}
-        {/* ========================================================= */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
-              Bukti Transfer / Lampiran
-            </span>
-            {selectedItem.Lampiran &&
-              selectedItem.Lampiran !== "-" &&
-              selectedItem.Lampiran.trim() !== "" && (
-                <a
-                  href={selectedItem.Lampiran}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
-                >
-                  Buka Gambar Penuh ↗
-                </a>
-              )}
-          </div>
+{/* PREVIEW LAMPIRAN / BUKTI PEMBAYARAN                      */}
+{/* ========================================================= */}
+<div className="space-y-2">
+  <div className="flex items-center justify-between">
+    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+      Bukti Transfer / Lampiran
+    </span>
+    {selectedItem.Lampiran &&
+      selectedItem.Lampiran !== "-" &&
+      selectedItem.Lampiran.trim() !== "" && (
+        <a
+          href={selectedItem.Lampiran}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+        >
+          Buka Gambar Penuh ↗
+        </a>
+      )}
+  </div>
 
-          {selectedItem.Lampiran &&
-          selectedItem.Lampiran !== "-" &&
-          selectedItem.Lampiran.trim() !== "" ? (
-            <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-950/5 dark:bg-black/20 p-2 flex items-center justify-center overflow-hidden group">
-              {/* Gambar / Bukti Transfer (Mendukung base64 data URL maupun Link Google Drive/Web) */}
-              <img
-                src={selectedItem.Lampiran}
-                alt="Bukti Transfer"
-                className="max-h-64 w-auto object-contain rounded-xl shadow-sm transition group-hover:scale-[1.02]"
-                onError={(e) => {
-                  // Fallback jika URL berupa tautan file dokumen atau gambar rusak
-                  const target = e.currentTarget;
-                  target.style.display = "none";
-                  const parent = target.parentElement;
-                  if (parent && !parent.querySelector(".fallback-link")) {
-                    const link = document.createElement("a");
-                    link.className =
-                      "fallback-link text-xs text-emerald-600 font-bold underline p-4 block text-center";
-                    link.href = selectedItem.Lampiran || "#";
-                    link.target = "_blank";
-                    link.innerText = "Tautan dokumen tersedia: Klik untuk membuka lampiran";
-                    parent.appendChild(link);
-                  }
-                }}
-              />
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-slate-400 text-xs bg-slate-50/50 dark:bg-slate-800/30">
-              Tidak ada bukti transfer / lampiran yang dilampirkan.
-            </div>
-          )}
-        </div>
+  {selectedItem.Lampiran &&
+  selectedItem.Lampiran !== "-" &&
+  selectedItem.Lampiran.trim() !== "" ? (
+    <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-950/5 dark:bg-black/20 p-2 flex items-center justify-center overflow-hidden group">
+      <img
+        src={getDirectDriveImageUrl(selectedItem.Lampiran)}
+        alt="Bukti Transfer"
+        referrerPolicy="no-referrer"
+        className="max-h-72 w-auto object-contain rounded-xl shadow-sm transition group-hover:scale-[1.02]"
+        onError={(e) => {
+          // Jika file di Google Drive berupa PDF atau format non-gambar, fallback ke preview iframe Drive
+          const target = e.currentTarget;
+          target.style.display = "none";
+          const parent = target.parentElement;
+          const fileIdMatch =
+            selectedItem.Lampiran?.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+            selectedItem.Lampiran?.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+          if (parent && fileIdMatch?.[1] && !parent.querySelector(".drive-iframe")) {
+            const iframe = document.createElement("iframe");
+            iframe.className = "drive-iframe w-full h-72 rounded-xl border-0";
+            iframe.src = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+            parent.appendChild(iframe);
+          } else if (parent && !parent.querySelector(".fallback-link")) {
+            const link = document.createElement("a");
+            link.className =
+              "fallback-link text-xs text-emerald-600 font-bold underline p-4 block text-center";
+            link.href = selectedItem.Lampiran || "#";
+            link.target = "_blank";
+            link.innerText = "Tautan dokumen tersedia: Klik untuk membuka lampiran";
+            parent.appendChild(link);
+          }
+        }}
+      />
+    </div>
+  ) : (
+    <div className="p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-slate-400 text-xs bg-slate-50/50 dark:bg-slate-800/30">
+      Tidak ada bukti transfer / lampiran yang dilampirkan.
+    </div>
+  )}
+</div>
       </div>
 
       {/* Modal Footer */}
-      <div className="border-t border-slate-100 dark:border-slate-800 px-6 py-3 bg-slate-50 dark:bg-slate-900/80 flex justify-end">
+      <div className="border-t border-slate-100 dark:border-slate-800 px-6 py-3 bg-slate-50 dark:bg-slate-900/80 flex items-center justify-between gap-2">
+        {/* Tombol Cancel (ubah Status jadi "X") hanya tampil jika Status bukan "C" */}
+        {(selectedItem.Status || "").trim().toUpperCase() !== "C" ? (
+          <button
+            type="button"
+            onClick={() => handleCancelTransaction(selectedItem)}
+            disabled={cancelingRow || (selectedItem.Status || "").trim().toUpperCase() === "X"}
+            className="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 text-xs font-bold disabled:opacity-50 transition"
+          >
+            {cancelingRow
+              ? "Membatalkan..."
+              : (selectedItem.Status || "").trim().toUpperCase() === "X"
+              ? "Sudah Cancel (X)"
+              : "Cancel"}
+          </button>
+        ) : (
+          <span />
+        )}
+
         <button
           onClick={() => setSelectedItem(null)}
-          className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition"
+          className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition ml-auto"
         >
           Tutup
         </button>

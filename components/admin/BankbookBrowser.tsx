@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import InputIPLForm from "@/components/admin/InputIPLForm";
 import InputPengeluaran from "@/components/admin/InputPengeluaran";
-import { Lancelot } from "next/font/google";
 
 interface KeuanganItem {
   ID?: string;
@@ -135,6 +134,61 @@ function normalizeDate(raw: any): string {
   return "";
 }
 
+// Helper ekstraksi tanggal reconcile dari item
+function getItemReconcileDate(item: KeuanganItem): string {
+  return normalizeDate(
+    item.ReconcileDate ??
+      item.reconcileDate ??
+      item.reconcile_date ??
+      item.tglReconcile ??
+      item.TglReconcile ??
+      item["Reconcile Date"]
+  );
+}
+
+// Helper pencocokan bank (Semua Bank / Bank BRI / IPLCash / Petty Cash)
+function isBankMatch(item: KeuanganItem, selectedBank: string): boolean {
+  const targetBankLower = selectedBank.trim().toLowerCase();
+  const bankVal = String(
+    item.CaraBayar ?? item.caraBayar ?? item.carabayar ?? item.Metode ?? ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    targetBankLower === "all" ||
+    targetBankLower === "semua bank" ||
+    targetBankLower === ""
+  ) {
+    return true;
+  }
+
+  // Bank BRI -> CaraBayar = "Transfer" / mengandung "bank" atau "bri"
+  if (targetBankLower === "bank bri" || targetBankLower === "bank") {
+    return (
+      bankVal.includes("transfer") ||
+      bankVal.includes("bank") ||
+      bankVal.includes("bri")
+    );
+  }
+
+  // IPLCash -> CaraBayar mengandung "iplcash" (atau "ipl cash")
+  if (targetBankLower === "iplcash" || targetBankLower === "ipl cash") {
+    return bankVal.includes("iplcash") || bankVal.includes("ipl cash");
+  }
+
+  // Petty Cash -> CaraBayar = "Kas" / "Tunai" / "Petty Cash"
+  if (targetBankLower === "petty cash" || targetBankLower === "kas") {
+    return (
+      bankVal === "kas" ||
+      bankVal.includes("petty") ||
+      bankVal.includes("tunai")
+    );
+  }
+
+  return false;
+}
+
 export default function BankbookBrowser() {
   const now = new Date();
   const [data, setData] = useState<KeuanganItem[]>([]);
@@ -155,7 +209,6 @@ export default function BankbookBrowser() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
       const res = await fetch("/api/finance?action=getKeuanganList", {
         cache: "no-store",
       });
@@ -184,14 +237,7 @@ export default function BankbookBrowser() {
   const availableYears = useMemo(() => {
     const years = new Set<string>([String(now.getFullYear()), "2025", "2026"]);
     data.forEach((item) => {
-      const recDate = normalizeDate(
-        item.ReconcileDate ??
-          item.reconcileDate ??
-          item.reconcile_date ??
-          item.tglReconcile ??
-          item.TglReconcile ??
-          item["Reconcile Date"]
-      );
+      const recDate = getItemReconcileDate(item);
       if (recDate) {
         years.add(recDate.split("-")[0]);
       }
@@ -201,7 +247,6 @@ export default function BankbookBrowser() {
 
   // Hitung Mutasi Buku Bank per Tanggal Reconcile (Running Balance)
   const { periodRows, summary } = useMemo(() => {
-    const targetBankLower = selectedBank.trim().toLowerCase();
     const targetYear = Number(selectedTahun);
     const targetMonth = Number(selectedBulan);
 
@@ -209,37 +254,11 @@ export default function BankbookBrowser() {
 
     data.forEach((item) => {
       // 1. Wajib memiliki Reconcile Date (jika kosong, tidak dihitung)
-      const recDate = normalizeDate(
-        item.ReconcileDate ??
-          item.reconcileDate ??
-          item.reconcile_date ??
-          item.tglReconcile ??
-          item.TglReconcile ??
-          item["Reconcile Date"]
-      );
+      const recDate = getItemReconcileDate(item);
       if (!recDate) return;
 
-      // 2. Cek CaraBayar ("Bank BRI" = Transfer | "Petty Cash" = Petty Cash / Tunai)
-      const bankVal = String(
-        item.CaraBayar ?? item.caraBayar ?? item.carabayar ?? item.Metode ?? ""
-      )
-        .trim()
-        .toLowerCase();
-
-      const isBankMatch =
-      targetBankLower === "semua bank" ||
-      targetBankLower === "all" ||
-      targetBankLower === "" ||
-        (targetBankLower === "bank bri" &&
-          (bankVal.includes("transfer") || bankVal.includes("bri"))) ||
-          (targetBankLower === "iplcash" &&
-            (bankVal.includes("iplcash") || bankVal.includes("cash"))) ||
-        (targetBankLower === "petty cash" &&
-          (bankVal.includes("kas") ||
-            bankVal.includes("tunai") ||
-            bankVal.includes("Kas")));
-
-      if (!isBankMatch) return;
+      // 2. Filter sesuai tab bank aktif (All / Bank BRI / IPLCash / Petty Cash)
+      if (!isBankMatch(item, selectedBank)) return;
 
       // 3. Kelompokkan Debit (IPL & NON-IPL) vs Credit (OUT)
       const cat = String(item.Category ?? item.category ?? item.Kategori ?? "")
@@ -321,42 +340,14 @@ export default function BankbookBrowser() {
   const detailModalData = useMemo(() => {
     if (!selectedDetailDate) return { rows: [], totalDb: 0, totalCr: 0, netTotal: 0 };
 
-    const targetBankLower = selectedBank.trim().toLowerCase();
     let totalDb = 0;
     let totalCr = 0;
 
     const rows = data
       .filter((item) => {
-        const recDate = normalizeDate(
-          item.ReconcileDate ??
-            item.reconcileDate ??
-            item.reconcile_date ??
-            item.tglReconcile ??
-            item.TglReconcile ??
-            item["Reconcile Date"]
-        );
+        const recDate = getItemReconcileDate(item);
         if (recDate !== selectedDetailDate) return false;
-
-        const bankVal = String(
-          item.CaraBayar ?? item.caraBayar ?? item.carabayar ?? item.Metode ?? ""
-        )
-          .trim()
-          .toLowerCase();
-
-        return (
-          targetBankLower === "semua bank" ||
-          targetBankLower === "all" ||
-          targetBankLower === "" ||
-          (targetBankLower === "bank bri" &&
-            (bankVal.includes("transfer") || bankVal.includes("bri"))) ||
-            (targetBankLower === "iplcash" &&
-              (bankVal.includes("iplcash") || bankVal.includes("cash"))) ||
-          (targetBankLower === "petty cash" &&
-            (bankVal.includes("petty") ||
-              bankVal.includes("tunai") ||
-              bankVal.includes("kas")))
-              
-        );
+        return isBankMatch(item, selectedBank);
       })
       .map((item) => {
         const cat = String(item.Category ?? item.category ?? item.Kategori ?? "")
@@ -410,30 +401,30 @@ export default function BankbookBrowser() {
 
   return (
     <div className="space-y-5">
-      {/* ================= HEADER & FILTER UTAMA ================= */}
-        {/* ================= STICKY FILTER BAR ================= */}
-<div className="sticky top-0 z-20 rounded-3xl border border-slate-200/80 bg-white/95 p-4 sm:p-5 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
-  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-    <div>
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-          <Landmark size={18} />
-        </span>
-        <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white">
-            Buku Bank &amp; Kas
-          </h1>
-          <p className="text-xs text-slate-500">
-            Mutasi harian dikelompokkan berdasarkan <strong>Tanggal Reconcile</strong>
-          </p>
-        </div>
-      </div>
-    </div>
-        {/* KONTROL FILTER: BANK, BULAN, TAHUN, REFRESH */}
-    <div className="flex flex-wrap items-center gap-2.5">
-            {/* Pilihan Bank (CaraBayar: Transfer = Bank BRI | Petty Cash = Petty Cash) */}
-            <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-            <button
+      {/* ================= STICKY FILTER BAR ================= */}
+      <div className="sticky top-0 z-20 rounded-3xl border border-slate-200/80 bg-white/95 p-4 sm:p-5 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                <Landmark size={18} />
+              </span>
+              <div>
+                <h1 className="text-lg font-black text-slate-900 dark:text-white">
+                  Buku Bank &amp; Kas
+                </h1>
+                <p className="text-xs text-slate-500">
+                  Mutasi harian dikelompokkan berdasarkan <strong>Tanggal Reconcile</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* KONTROL FILTER: BANK, BULAN, TAHUN, REFRESH */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Pilihan Bank */}
+            <div className="flex flex-wrap rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              <button
                 type="button"
                 onClick={() => setSelectedBank("All")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
@@ -445,6 +436,7 @@ export default function BankbookBrowser() {
                 <PlaneLanding size={14} />
                 <span>Semua Bank</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedBank("Bank BRI")}
@@ -470,6 +462,7 @@ export default function BankbookBrowser() {
                 <Wallet size={14} />
                 <span>IPL Cash</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedBank("Petty Cash")}
@@ -568,19 +561,19 @@ export default function BankbookBrowser() {
         </div>
       </div>
 
-    {/* ================= TABEL BUKU BANK HARIAN (STICKY HEADER & SCROLL) ================= */}
-<div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-  <div className="max-h-[65vh] overflow-auto">
-    <table className="w-full text-left text-xs">
-      <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 text-[11px] uppercase tracking-wider text-slate-500 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-800/95 dark:text-slate-400">
-        <tr>
-          <th className="px-4 sm:px-5 py-3.5 font-bold">Tanggal</th>
-          <th className="px-4 py-3.5 font-bold text-right">Opening</th>
-          <th className="px-4 py-3.5 font-bold text-right text-emerald-600">Debit</th>
-          <th className="px-4 py-3.5 font-bold text-right text-rose-600">Credit</th>
-          <th className="px-4 sm:px-5 py-3.5 font-bold text-right">Ending</th>
-        </tr>
-      </thead>
+      {/* ================= TABEL BUKU BANK HARIAN (STICKY HEADER & SCROLL) ================= */}
+      <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="max-h-[65vh] overflow-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 text-[11px] uppercase tracking-wider text-slate-500 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-800/95 dark:text-slate-400">
+              <tr>
+                <th className="px-4 sm:px-5 py-3.5 font-bold">Tanggal</th>
+                <th className="px-4 py-3.5 font-bold text-right">Opening</th>
+                <th className="px-4 py-3.5 font-bold text-right text-emerald-600">Debit</th>
+                <th className="px-4 py-3.5 font-bold text-right text-rose-600">Credit</th>
+                <th className="px-4 sm:px-5 py-3.5 font-bold text-right">Ending</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
@@ -593,7 +586,9 @@ export default function BankbookBrowser() {
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
                     Tidak ada transaksi ter-reconcile pada{" "}
-                    <strong className="text-slate-600 dark:text-slate-300">{selectedBank}</strong>{" "}
+                    <strong className="text-slate-600 dark:text-slate-300">
+                      {selectedBank === "All" ? "Semua Bank" : selectedBank}
+                    </strong>{" "}
                     untuk periode ini.
                   </td>
                 </tr>
@@ -628,36 +623,38 @@ export default function BankbookBrowser() {
               )}
             </tbody>
             {!loading && periodRows.length > 0 && (
-        <tfoot className="sticky bottom-0 z-10 border-t-2 border-slate-200 bg-slate-50/95 text-xs font-black backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
-          <tr>
-            <td className="px-4 sm:px-5 py-3.5 text-slate-700 dark:text-slate-200">
-              Total Periode
-            </td>
-            <td className="px-4 py-3.5 text-right font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
-              {formatRupiah(summary.opening)}
-            </td>
-            <td className="px-4 py-3.5 text-right font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-              {formatRupiah(summary.debit)}
-            </td>
-            <td className="px-4 py-3.5 text-right font-mono text-rose-600 dark:text-rose-400 whitespace-nowrap">
-              {formatRupiah(summary.credit)}
-            </td>
-            <td className="px-4 sm:px-5 py-3.5 text-right font-mono text-sky-700 dark:text-sky-300 whitespace-nowrap">
-              {formatRupiah(summary.ending)}
-            </td>
-          </tr>
-        </tfoot>
-      )}
-    </table>
-  </div>
-</div>
+              <tfoot className="sticky bottom-0 z-10 border-t-2 border-slate-200 bg-slate-50/95 text-xs font-black backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
+                <tr>
+                  <td className="px-4 sm:px-5 py-3.5 text-slate-700 dark:text-slate-200">
+                    Total Periode
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {formatRupiah(summary.opening)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                    {formatRupiah(summary.debit)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                    {formatRupiah(summary.credit)}
+                  </td>
+                  <td className="px-4 sm:px-5 py-3.5 text-right font-mono text-sky-700 dark:text-sky-300 whitespace-nowrap">
+                    {formatRupiah(summary.ending)}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+
       {/* Catatan Aturan Perhitungan */}
       <div className="flex items-start gap-2 rounded-2xl border border-slate-200/70 bg-slate-50 px-4 py-3 text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
         <Info size={15} className="mt-0.5 shrink-0 text-emerald-600" />
         <p>
           Hanya transaksi yang memiliki <strong>Reconcile Date</strong> yang dihitung. Pilihan{" "}
-          <strong>Bank BRI</strong> mengambil data dengan <code>CaraBayar = Transfer</code>,
-          sedangkan <strong>Petty Cash</strong> mengambil <code>CaraBayar = Kas</code>.
+          <strong>Bank BRI</strong> mengambil <code>CaraBayar = Transfer</code>,{" "}
+          <strong>IPL Cash</strong> mengambil <code>CaraBayar = IPLCash</code>, dan{" "}
+          <strong>Petty Cash</strong> mengambil <code>CaraBayar = Kas</code>.
         </p>
       </div>
 
@@ -669,7 +666,11 @@ export default function BankbookBrowser() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4 dark:border-slate-800 dark:bg-slate-800/50">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
-                  {selectedBank === "Bank BRI" ? <Landmark size={18} /> : <Wallet size={18} />}
+                  {selectedBank === "Bank BRI" || selectedBank === "All" ? (
+                    <Landmark size={18} />
+                  ) : (
+                    <Wallet size={18} />
+                  )}
                 </span>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -677,7 +678,7 @@ export default function BankbookBrowser() {
                       Detail Mutasi :
                     </h3>
                     <span className="rounded-lg bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                      {selectedBank}
+                      {selectedBank === "All" ? "Semua Bank" : selectedBank}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -726,7 +727,7 @@ export default function BankbookBrowser() {
                     <th className="px-4 py-3 font-bold">Keterangan / Payment Info</th>
                     <th className="px-4 py-3 font-bold text-right text-emerald-600">Debit</th>
                     <th className="px-4 py-3 font-bold text-right text-rose-600">Credit</th>
-                    <th className="px-4 py-3 font-bold text-right">Total </th>
+                    <th className="px-4 py-3 font-bold text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

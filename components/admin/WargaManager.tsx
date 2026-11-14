@@ -199,7 +199,7 @@ useEffect(() => {
 
       for (let y = currentYear; y >= START_YEAR; y--) {
         const maxMonth = y === currentYear ? currentMonth : 12;
-        const minMonth = y === START_YEAR ? START_MONTH : 1;
+        const minMonth = y === START_YEAR ? START_MONTH : 2;
 
         for (let m = maxMonth; m >= minMonth; m--) {
           const key = `${y}-${m}`;
@@ -216,13 +216,13 @@ useEffect(() => {
                 status:
                   existing.status === "C"
                     ? "Lunas"
-                    : existing.status === "O"
-                    ? "Menunggu Verifikasi"
+                    : existing.status === "R"
+                    ? "Lunas"
                     : "Belum dibayar",
                 paidDate: existing.paidDate || "-",
               });
             });
-          } else {
+          } /*else {
             historyList.push({
               transId: `UNPAID-${y}-${m}`,
               period: periodText,
@@ -231,8 +231,8 @@ useEffect(() => {
               status: "Belum dibayar",
               paidDate: "-",
             });
-          }
-        }
+          } */
+        } 
       }
 
       setIplHistory(historyList);
@@ -626,7 +626,7 @@ useEffect(() => {
                   </div>
                   <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-3.5 dark:border-rose-900/30 dark:bg-rose-950/20">
                     <span className="text-[11px] font-semibold text-rose-800 dark:text-rose-300">
-                      Sisa Tunggakan ({unpaidCount} Periode)
+                      Sisa Tunggakan
                     </span>
                     <p className="mt-1 text-lg font-black text-rose-700 dark:text-rose-400">
                       {money(totalUnpaid)}
@@ -634,7 +634,7 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Tabel Riwayat IPL (Read-Only) */}
+                {/* Tabel Riwayat IPL (Read-Only)  /*({unpaidCount} Periode)*/}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">

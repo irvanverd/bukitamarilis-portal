@@ -75,6 +75,7 @@ export type AdminTab =
   // Group Management
   | "warga"
   | "users"
+  | "changepswd"
   // Group Sekretariat
   | "sarpras"
   | "komplain"
@@ -119,6 +120,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { id: "warga", label: "Data Warga", icon: Users },
       { id: "users", label: "User & Role", icon: ShieldCheck },
+      { id: "changepswd", label: "Change Password", icon: ShieldCheck },
     ],
   },
   {
@@ -837,6 +839,7 @@ const handleSubmitPwdForm = async (e: React.FormEvent) => {
           <WargaManager forcedKorwil={lockedKorwil} />
         )}
 
+
         {/* ================= TAB REKAP TRANSAKSI ================= */}
         {activeTab === "browser-keuangan" &&
           session?.allowedTabs.includes("browser-keuangan") && (
@@ -1481,94 +1484,93 @@ const handleSubmitPwdForm = async (e: React.FormEvent) => {
                 </div>
               </div>
             )}
-
-            {/* ========================================================= */}
-            {/* MODAL 2: CHANGE PASSWORD                                  */}
-            {/* ========================================================= */}
-            {pwdModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-                <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-slate-800 dark:bg-slate-900">
-                  <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                        Ganti Password Petugas
-                      </h3>
-                      <p className="text-[11px] font-mono text-emerald-600 font-bold">
-                        {formPwd.username} ({formPwd.userid})
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setPwdModalOpen(false)}
-                      className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  <form onSubmit={handleSubmitPwdForm} className="p-6 space-y-4 text-xs">
-                    <div>
-                      <label className="font-bold text-slate-700 dark:text-slate-300">
-                        Password Baru <span className="text-rose-500">*</span>
-                      </label>
-                      <div className="relative mt-1">
-                        <input
-                          type={showNewPwd ? "text" : "password"}
-                          required
-                          placeholder="Masukkan password baru"
-                          value={formPwd.newPassword}
-                          onChange={(e) =>
-                            setFormPwd({ ...formPwd, newPassword: e.target.value })
-                          }
-                          className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-3 pr-9 font-mono font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPwd(!showNewPwd)}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        >
-                          {showNewPwd ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-slate-700 dark:text-slate-300">
-                        Konfirmasi Password Baru <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type={showNewPwd ? "text" : "password"}
-                        required
-                        placeholder="Ulangi password baru"
-                        value={formPwd.confirmPassword}
-                        onChange={(e) =>
-                          setFormPwd({ ...formPwd, confirmPassword: e.target.value })
-                        }
-                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                      />
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => setPwdModalOpen(false)}
-                        className="rounded-xl bg-slate-100 px-4 py-2 font-bold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                      >
-                        Batal
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={savingPwd}
-                        className="rounded-xl bg-amber-600 px-5 py-2 font-bold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50"
-                      >
-                        {savingPwd ? "Menyimpan..." : "Simpan Password"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
           </div>
         )}
+        {/* ========================================================= */}
+      {/* MODAL CHANGE PASSWORD (GLOBAL UNTUK SEMUA TAB/ROLE)       */}
+      {/* ========================================================= */}
+      {pwdModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Ganti Password Akun
+                </h3>
+                <p className="text-[11px] font-mono text-emerald-600 font-bold">
+                  {formPwd.username} ({formPwd.userid})
+                </p>
+              </div>
+              <button
+                onClick={() => setPwdModalOpen(false)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitPwdForm} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300">
+                  Password Baru <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type={showNewPwd ? "text" : "password"}
+                    required
+                    placeholder="Masukkan password baru"
+                    value={formPwd.newPassword}
+                    onChange={(e) =>
+                      setFormPwd({ ...formPwd, newPassword: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-3 pr-9 font-mono font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPwd(!showNewPwd)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showNewPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300">
+                  Konfirmasi Password Baru <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type={showNewPwd ? "text" : "password"}
+                  required
+                  placeholder="Ulangi password baru"
+                  value={formPwd.confirmPassword}
+                  onChange={(e) =>
+                    setFormPwd({ ...formPwd, confirmPassword: e.target.value })
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setPwdModalOpen(false)}
+                  className="rounded-xl bg-slate-100 px-4 py-2 font-bold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPwd}
+                  className="rounded-xl bg-amber-600 px-5 py-2 font-bold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {savingPwd ? "Menyimpan..." : "Simpan Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );

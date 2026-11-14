@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
 
+
   const action = searchParams.get("action");
   if (
     action !== "getFinanceData" &&
@@ -44,13 +45,22 @@ export async function GET(req: NextRequest) {
     }, 20000);
 
     // Ambil parameter accType (toleran terhadap variasi case)
-    const accType = searchParams.get("accType") || searchParams.get("acctype");
-
-    // Susun URL dengan meneruskan accType jika tersedia
-    let url = `${API_URL}?action=${encodeURIComponent(action)}`;
-    if (accType) {
-      url += `&accType=${encodeURIComponent(accType)}&acctype=${encodeURIComponent(accType)}`;
-    }
+      // Di dalam export async function GET(request: Request)
+      const bulan = searchParams.get("bulan");
+      const tahun = searchParams.get("tahun");
+      const accType = searchParams.get("accType") || searchParams.get("acctype");
+      
+      // Susun URL dengan meneruskan bulan, tahun, dan accType jika tersedia
+      let url = `${API_URL}?action=${encodeURIComponent(action)}`;
+      if (bulan) {
+        url += `&bulan=${encodeURIComponent(bulan)}`;
+      }
+      if (tahun) {
+        url += `&tahun=${encodeURIComponent(tahun)}`;
+      }
+      if (accType) {
+        url += `&accType=${encodeURIComponent(accType)}&acctype=${encodeURIComponent(accType)}`;
+      }
 
     const res = await fetch(url, {
       cache: "no-store",
