@@ -5,6 +5,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock3,
+  CurrencyIcon,
   Edit3,
   Eye,
   Filter,
@@ -22,6 +23,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { Curve } from "recharts";
 
 export interface WargaRecord {
   Blok: string;
@@ -243,13 +245,24 @@ useEffect(() => {
     }
   };
 
+  // Ambil data user yang sedang login dari localStorage
+let currentUser: { userid?: string; username?: string; nama?: string } | null = null;
+try {
+  const sessionRaw = localStorage.getItem("admin_session");
+  if (sessionRaw) {
+    currentUser = JSON.parse(sessionRaw);
+  }
+} catch (e) {
+  console.error("Gagal membaca admin_session:", e);
+}
+
   const handleOpenCreate = () => {
     setModalMode("create");
     setFormBlok("");
     setFormNama("");
-    setFormStatusRumah("Dihuni Sendiri");
+    setFormStatusRumah("HUNI");
     setFormNoHp("");
-    setFormKorwil("Korwil 1");
+    setFormKorwil("?");
     setFormTarif(110000);
     setFormFlagFreeIPL(1);
     setFormFlagMobile(1);
@@ -284,18 +297,21 @@ useEffect(() => {
     setSaving(true);
 
     try {
-      const res = await fetch("/api/admin/save-warga", {
+      const res = await fetch("/api/ipl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action:"saveWarga",
           blok: formBlok.trim().toUpperCase(),
           nama: formNama.trim(),
           statusRumah: formStatusRumah,
           noHp: formNoHp.trim(),
+          iplamount: formTarif,
           korwil: formKorwil,
           flagFreeIPL: formFlagFreeIPL,
           flagMobile: formFlagMobile,
           isEdit: modalMode === "edit",
+          editby: currentUser?.userid || currentUser?.username || "ADMIN",
         }),
       });
 
@@ -732,7 +748,7 @@ useEffect(() => {
                       type="text"
                       required
                       disabled={modalMode === "edit"}
-                      placeholder="Contoh: AR.16/09"
+                      placeholder="Contoh: AR.12/01"
                       value={formBlok}
                       onChange={(e) => setFormBlok(e.target.value.toUpperCase())}
                       className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-xs font-semibold uppercase text-slate-800 disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/50"
@@ -787,6 +803,26 @@ useEffect(() => {
                     />
                   </div>
                 </div>
+
+                <div>
+  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+    Tarif IPL
+  </label>
+  <div className="relative mt-1">
+    <CurrencyIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+    <input
+      type="text"
+      inputMode="numeric"
+      placeholder="0"
+      value={Number.isNaN(Number(formTarif)) || formTarif === 0 ? "" : String(formTarif)}
+      onChange={(e) => {
+        const rawDigits = e.target.value.replace(/\D/g, "");
+        setFormTarif(rawDigits === "" ? 0 : Number(rawDigits));
+      }}
+      className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+    />
+  </div>
+</div>
 
                 <div>
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
