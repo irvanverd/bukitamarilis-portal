@@ -341,16 +341,28 @@ useEffect(() => {
           }
         }
 
+
         // 4. FILTER METODE BAYAR / AKUN / STATUS (Jika ada di state Anda)
         if (filterCaraBayar) {
           const metode = (item.CaraBayar || item.Metode || "").trim().toLowerCase();
           if (metode !== filterCaraBayar.trim().toLowerCase()) return false;
         }
 
+        if (filterAccountName) {
+          const itemAccName = String(item.AccountName || item.Account || "").trim().toLowerCase();
+          if (itemAccName !== filterAccountName.trim().toLowerCase()) {
+            return false;
+          }
+        }
+  
+        return true;
+
         if (filterStatus) {
           const st = (item.Status || "").trim().toLowerCase();
           if (st !== filterStatus.trim().toLowerCase()) return false;
         }
+
+        
 
         // 5. FILTER PENCARIAN TEKS (Blok, Nama, Keterangan)
         if (searchQuery.trim()) {
@@ -381,6 +393,7 @@ useEffect(() => {
     filterTahun,
     filterCaraBayar,
     filterStatus,
+    filterAccountName,
     searchQuery,
   ]);
 
@@ -979,7 +992,23 @@ useEffect(() => {
             );
           })
         )}
-      </tbody>
+    </tbody>
+      {!loading && filteredData.length > 0 && (
+        <tfoot className="border-t-2 border-slate-200 bg-emerald-50/90 text-[11px] font-black dark:border-slate-700 dark:bg-slate-800/95">
+          <tr>
+            <td colSpan={2} className="px-2.5 py-3 text-slate-700 dark:text-slate-200">
+              Total ({filteredData.length} transaksi)
+            </td>
+            <td colSpan={2} className="px-2.5 py-3 text-right font-mono text-xs font-black text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+              {new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                maximumFractionDigits: 0,
+              }).format(totalFilteredAmount)}
+            </td>
+          </tr>
+        </tfoot>
+      )}
     </table>
   </div>
 </div>
