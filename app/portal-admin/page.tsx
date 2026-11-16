@@ -573,6 +573,69 @@ const handleSubmitPwdForm = async (e: React.FormEvent) => {
     });
   }, [listWargaLookup, iplBlok, searchBlokQuery, lockedKorwil]);
 
+
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [pendingExitUrl, setPendingExitUrl] = useState<string>("/");
+
+  useEffect(() => {
+    // 1. Dorong state awal ke history agar tombol Back tertahan di halaman portal-admin
+    window.history.pushState({ portalAdminGuard: true }, "", window.location.href);
+
+    const handlePopState = () => {
+      // Tahan pengguna tetap di portal-admin dan tampilkan modal konfirmasi
+      window.history.pushState({ portalAdminGuard: true }, "", window.location.href);
+      setPendingExitUrl("/");
+      setShowExitConfirm(true);
+    };
+
+    // 2. Proteksi saat tutup tab / reload browser
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "Are you sure exit?";
+      return "Are you sure exit?";
+    };
+
+    // 3. Intercept klik link menuju halaman utama ("/" atau "myamarilis.id/")
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest("a");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href") || "";
+      const isHomeLink =
+        href === "/" ||
+        href === "https://myamarilis.id" ||
+        href === "https://myamarilis.id/" ||
+        href === "http://myamarilis.id" ||
+        href === "http://myamarilis.id/";
+
+      if (isHomeLink) {
+        e.preventDefault();
+        setPendingExitUrl(href || "/");
+        setShowExitConfirm(true);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
+  }, []);
+
+  // Fungsi jika user benar-benar memilih keluar ("Yes, Exit")
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false);
+    // Lepas listener sebelum navigasi keluar agar tidak terblokir lagi
+    window.onbeforeunload = null;
+    window.location.replace("about:blank");
+  };
+
+
   // Handler ketika salah satu unit dipilih dari list
   const handleSelectUnit = (w: WargaLookupItem) => {
     const unit = w.Blok || w.BlokID || "";
@@ -1568,6 +1631,54 @@ const handleSubmitPwdForm = async (e: React.FormEvent) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL KONFIRMASI EXIT PORTAL ADMIN ================= */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Are you sure exit?
+                </h3>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowExitConfirm(false)}
+                className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmExit}
+                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition"
+              >
+                Keluar
+              </button>
+            </div>
           </div>
         </div>
       )}

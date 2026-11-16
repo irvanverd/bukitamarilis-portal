@@ -13,6 +13,8 @@ import {
   X,
   Plus,
   PlaneLanding,
+  BookAIcon,
+  Move3dIcon,
 } from "lucide-react";
 import InputIPLForm from "@/components/admin/InputIPLForm";
 import InputPengeluaran from "@/components/admin/InputPengeluaran";
@@ -202,8 +204,8 @@ export default function BankbookBrowser() {
   // State Modal Detail Transaksi (Key: selectedBank + selectedDetailDate)
   const [selectedDetailDate, setSelectedDetailDate] = useState<string | null>(null);
 
-  // State Modal Form Jurnal "In" & "Out"
-  const [activeJurnalModal, setActiveJurnalModal] = useState<"IN" | "OUT" | null>(null);
+// State Modal Form Jurnal "In", "Out", & "Pindah Buku"
+const [activeJurnalModal, setActiveJurnalModal] = useState<"IN" | "OUT" | "PINDAH_BUKU" | null>(null);
 
   // Ambil data transaksi menggunakan function getKeuanganList()
   const fetchData = async () => {
@@ -232,6 +234,63 @@ export default function BankbookBrowser() {
   useEffect(() => {
     fetchData();
   }, []);
+
+
+  // State Form Pindah Buku
+  const [pbForm, setPbForm] = useState({
+    tanggal: "",
+    bankAsal: "IPLCash",
+    bankTujuan: "Transfer",
+    nominal: 0,
+    keterangan: "",
+  });
+  const [savingPb, setSavingPb] = useState(false);
+  const handleOpenPindahBuku = () => {
+    setPbForm({
+      tanggal: selectedDetailDate || new Date().toISOString().split("T")[0],
+      bankAsal: "IPLCash",
+      bankTujuan: "Transfer",
+      nominal: 0,
+      keterangan: "",
+    });
+    setActiveJurnalModal("PINDAH_BUKU");
+  };
+
+  const handleSubmitPindahBuku = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pbForm.bankAsal === pbForm.bankTujuan) {
+      alert("Akun/Bank asal dan tujuan tidak boleh sama.");
+      return;
+    }
+    if (!pbForm.nominal || pbForm.nominal <= 0) {
+      alert("Nominal pindah buku harus lebih dari 0.");
+      return;
+    }
+
+    try {
+      setSavingPb(true);
+      const res = await fetch("/api/ipl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "savePindahBuku",
+          ...pbForm,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.message || "Gagal menyimpan transaksi pindah buku.");
+        return;
+      }
+
+      setActiveJurnalModal(null);
+      fetchData(); // Refresh tabel Buku Bank & detail modal
+    } catch (err: any) {
+      alert("Terjadi kesalahan saat menyimpan pindah buku: " + err.message);
+    } finally {
+      setSavingPb(false);
+    }
+  };
 
   // Daftar tahun dinamis dari data reconcile + tahun berjalan
   const availableYears = useMemo(() => {
@@ -506,6 +565,17 @@ export default function BankbookBrowser() {
               ))}
             </select>
 
+            {/* Tombol Pindah Buku (Akses Langsung dari Luar) */}
+            <button
+              type="button"
+              onClick={handleOpenPindahBuku}
+              title="Transfer saldo antar Kas / Bank"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sky-700 transition"
+            >
+              <Move3dIcon size={14} />
+              <span>Pindah Buku</span>
+            </button>
+
             {/* Tombol Refresh */}
             <button
               type="button"
@@ -610,10 +680,10 @@ export default function BankbookBrowser() {
                       {formatRupiah(row.opening)}
                     </td>
                     <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                      {row.debit > 0 ? `+ ${formatRupiah(row.debit)}` : "-"}
+                      {row.debit > 0 ? `+ ${formatRupiah(row.debit)}` : `${formatRupiah(row.debit)}`}
                     </td>
                     <td className="px-4 py-3.5 text-right font-mono font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                      {row.credit > 0 ? `- ${formatRupiah(row.credit)}` : "-"}
+                      {row.credit > 0 ? `- ${formatRupiah(row.credit)}` :  `${formatRupiah(row.credit)}`}
                     </td>
                     <td className="px-4 sm:px-5 py-3.5 text-right font-mono font-black text-slate-900 dark:text-white whitespace-nowrap">
                       {formatRupiah(row.ending)}
@@ -706,6 +776,14 @@ export default function BankbookBrowser() {
                 >
                   <Plus size={14} />
                   <span>Out</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenPindahBuku}
+                  className="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sky-700 transition"
+                >
+                  <RefreshCw size={13} />
+                  <span>Pindah Buku</span>
                 </button>
                 <button
                   type="button"
@@ -806,7 +884,7 @@ export default function BankbookBrowser() {
         </div>
       )}
 
-      {/* ================= MODAL FORM JURNAL IN (InputIPLForm) & OUT (InputPengeluaran) ================= */}
+      {/* ================= MODAL FORM JURNAL IN, OUT & PINDAH BUKU ================= */}
       {activeJurnalModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-5">
           <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
@@ -814,23 +892,33 @@ export default function BankbookBrowser() {
               <div className="flex items-center gap-2.5">
                 <span
                   className={`flex h-8 w-8 items-center justify-center rounded-xl text-white ${
-                    activeJurnalModal === "IN" ? "bg-emerald-600" : "bg-rose-600"
+                    activeJurnalModal === "IN"
+                      ? "bg-emerald-600"
+                      : activeJurnalModal === "OUT"
+                      ? "bg-rose-600"
+                      : "bg-sky-600"
                   }`}
                 >
                   {activeJurnalModal === "IN" ? (
                     <ArrowDownLeft size={16} />
-                  ) : (
+                  ) : activeJurnalModal === "OUT" ? (
                     <ArrowUpRight size={16} />
+                  ) : (
+                    <RefreshCw size={15} />
                   )}
                 </span>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
                     {activeJurnalModal === "IN"
                       ? "Tambah Jurnal Pemasukan (IPL & Non-IPL)"
-                      : "Tambah Jurnal Pengeluaran (OUT)"}
+                      : activeJurnalModal === "OUT"
+                      ? "Tambah Jurnal Pengeluaran (OUT)"
+                      : "Pindah Buku Antar Kas / Bank"}
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Data buku bank akan diperbarui otomatis setelah form ditutup
+                    {activeJurnalModal === "PINDAH_BUKU"
+                      ? "Otomatis membuat 2 mutasi berpasangan (- Asal & + Tujuan)"
+                      : "Data buku bank akan diperbarui otomatis setelah form ditutup"}
                   </p>
                 </div>
               </div>
@@ -847,7 +935,125 @@ export default function BankbookBrowser() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              {activeJurnalModal === "IN" ? <InputIPLForm /> : <InputPengeluaran />}
+              {activeJurnalModal === "IN" ? (
+                <InputIPLForm />
+              ) : activeJurnalModal === "OUT" ? (
+                <InputPengeluaran />
+              ) : (
+                <form onSubmit={handleSubmitPindahBuku} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300">
+                        Tanggal Pindah Buku <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={pbForm.tanggal}
+                        onChange={(e) => setPbForm({ ...pbForm, tanggal: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 dark:text-slate-300">
+                        Nominal Transfer (Rp) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        placeholder="0"
+                        value={pbForm.nominal === 0 ? "" : String(pbForm.nominal)}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          setPbForm({ ...pbForm, nominal: digits ? Number(digits) : 0 });
+                        }}
+                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="font-bold text-rose-600 dark:text-rose-400">
+                        Dari Bank / Kas Asal (-) <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={pbForm.bankAsal}
+                        onChange={(e) => setPbForm({ ...pbForm, bankAsal: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      >
+                         <option value="Transfer">Bank BRI</option>
+                        <option value="IPLCash">IPL Cash</option>
+                        <option value="Kas">Petty Cash</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-emerald-600 dark:text-emerald-400">
+                        Ke Bank / Kas Tujuan (+) <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={pbForm.bankTujuan}
+                        onChange={(e) => setPbForm({ ...pbForm, bankTujuan: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      >
+                        <option value="Transfer">Bank BRI</option>
+                        <option value="IPLCash">IPL Cash</option>
+                        <option value="Kas">Petty Cash</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      Keterangan / Catatan Mutasi
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Setoran tunai IPL Cash ke rekening Bank BRI"
+                      value={pbForm.keterangan}
+                      onChange={(e) => setPbForm({ ...pbForm, keterangan: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+
+                  {/* Preview 2 Transaksi yang Akan Terbentuk */}
+                  <div className="rounded-2xl border border-sky-200/70 bg-sky-50/60 p-3.5 text-[11px] text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200 space-y-1">
+                    <p className="font-bold">Ringkasan 2 Transaksi (Category: NON-IPL):</p>
+                    <p>
+                      1. <strong>{pbForm.bankAsal}</strong>:{" "}
+                      <span className="font-mono font-bold text-rose-600">
+                        -{formatRupiah(pbForm.nominal || 0)}
+                      </span>
+                    </p>
+                    <p>
+                      2. <strong>{pbForm.bankTujuan}</strong>:{" "}
+                      <span className="font-mono font-bold text-emerald-600">
+                        +{formatRupiah(pbForm.nominal || 0)}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setActiveJurnalModal(null)}
+                      className="rounded-xl bg-slate-100 px-4 py-2 font-bold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingPb}
+                      className="rounded-xl bg-sky-600 px-5 py-2 font-bold text-white shadow-sm hover:bg-sky-700 disabled:opacity-50 transition"
+                    >
+                      {savingPb ? "Menyimpan..." : "Simpan Pindah Buku"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

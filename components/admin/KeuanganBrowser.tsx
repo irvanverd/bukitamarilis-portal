@@ -384,6 +384,17 @@ useEffect(() => {
     searchQuery,
   ]);
 
+  // Hitung total amount dari seluruh baris yang sedang tampil/terfilter
+  // (mengecualikan transaksi berstatus Cancel "X" jika ada)
+  const totalFilteredAmount = useMemo(() => {
+    return filteredData.reduce((acc, item) => {
+      const status = String(item.Status || "").trim().toUpperCase();
+      if (status === "X") return acc; // Abaikan transaksi yang dibatalkan
+      const nominal = Number(item.Amount ?? item.Nominal ?? 0) || 0;
+      return acc + nominal;
+    }, 0);
+  }, [filteredData]);
+
   // Ekstrak Opsi Unik untuk Dropdown Filter
   const options = useMemo(() => {
     const korwilSet = new Set<string>();
@@ -668,22 +679,7 @@ useEffect(() => {
     </select>
   </div>
 
-  {/* Filter Status */}
-  <div>
-    <label className="text-[10px] text-slate-400 font-bold block mb-1">Status</label>
-    <select
-      value={filterStatus}
-      onChange={(e) => setFilterStatus(e.target.value)}
-      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 outline-none"
-    >
-      <option value="">Semua Status</option>
-      <option value="C">Reconcile</option>
-      <option value="O">Open</option>
-      <option value="R">Release</option>
-      <option value="X">Cancel</option>
-    </select>
-  </div>
-
+  
   {/* Filter Akun COA */}
   <div>
     <label className="text-[10px] text-slate-400 font-bold block mb-1">Akun / COA</label>
@@ -698,6 +694,22 @@ useEffect(() => {
           {an}
         </option>
       ))}
+    </select>
+  </div>
+
+  {/* Filter Status */}
+  <div>
+    <label className="text-[10px] text-slate-400 font-bold block mb-1">Status</label>
+    <select
+      value={filterStatus}
+      onChange={(e) => setFilterStatus(e.target.value)}
+      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 outline-none"
+    >
+      <option value="">Semua Status</option>
+      <option value="C">Reconcile</option>
+      <option value="O">Open</option>
+      <option value="R">Release</option>
+      <option value="X">Cancel</option>
     </select>
   </div>
 </div>
@@ -854,6 +866,23 @@ useEffect(() => {
           </tr>
         ))}
       </tbody>
+
+      {!loading && filteredData.length > 0 && (
+        <tfoot className="sticky bottom-0 z-10 border-t-2 border-slate-200 bg-slate-50/95 text-xs font-black backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
+          <tr>
+            {/* Sesuaikan colSpan dengan jumlah kolom sebelum kolom Nominal di tabel Anda */}
+            <td colSpan={5} className="px-4 py-3.5 text-slate-700 dark:text-slate-200">
+              Total ({filteredData.length} transaksi)
+            </td>
+            <td className="px-4 py-3.5 text-right font-mono text-sm font-black text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+              {formatRupiah(totalFilteredAmount)}
+            </td>
+            {/* Sesuaikan colSpan sisa kolom setelah kolom Nominal (Status, Reconcile, Aksi, dll.) */}
+            <td colSpan={3} className="px-4 py-3.5" />
+          </tr>
+        </tfoot>
+      )}
+
     </table>
   </div>
 </div>
