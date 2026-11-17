@@ -283,6 +283,7 @@ useEffect(() => {
 
 
   const filteredData = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     // Tentukan tab efektif yang aktif
     const effectiveTab =
       allowedTabMode === "IN_ONLY"
@@ -296,12 +297,38 @@ useEffect(() => {
 
     return data
       .filter((item) => {
+
+        // 1. Filter Pencarian Teks (Searchbox)
+      if (q) {
+        const searchableText = [
+          item.Blok,
+          item.BlokID,
+          item.Nama,
+          item.NamaWarga,
+          item.Keterangan,
+          item.TransId,
+          item.InvoiceNo,
+          item.AccountName,
+          item.Korwil,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!searchableText.includes(q)) {
+          return false;
+        }
+      }
+
+
         // 1. FILTER KATEGORI (PEMASUKAN vs PENGELUARAN)
         const cat = (item.Category || item.Kategori || "").trim().toUpperCase();
         const isOut = cat === "OUT" || cat === "PENGELUARAN" || cat === "KELUAR";
 
         if (effectiveTab === "IN" && isOut) return false;
         if (effectiveTab === "OUT" && !isOut) return false;
+
+
 
         // 2. FILTER KORWIL (Hanya diterapkan jika effectiveKorwil terisi)
         if (effectiveKorwil) {
@@ -434,6 +461,8 @@ useEffect(() => {
       String(currentYear - 1),
       "2025",
       "2026",
+      "2027",
+      "2028",
     ]);
 
     data.forEach((d) => {
@@ -782,7 +811,7 @@ useEffect(() => {
 
           {/* Kolom Tengah (Hanya Freeze Header ke Atas) */}
           <th className="sticky top-0 z-10 py-3.5 px-4 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
-            Akun & Kategori
+            Akun & Keterangan
           </th>
           <th className="sticky top-0 z-10 py-3.5 px-4 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
             Cara Bayar
@@ -818,17 +847,17 @@ useEffect(() => {
                 {row.Blok || "UMUM"}
               </div>
               <div className="text-[11px] text-slate-400 truncate max-w-[150px]">
-                {row.Nama || "-"}
+                {row.Nama || row.Keterangan}
               </div>
             </td>
 
             {/* Body Kolom Biasa */}
             <td className="py-3 px-4 border-b border-slate-100 dark:border-slate-800">
               <div className="font-semibold text-slate-800 dark:text-slate-200">
-                {row.AccountName || row.Account || "-"}
+              {row?.Account || row?.account} - {row?.AccountName || row?.accname}
               </div>
               <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 font-mono">
-                {row.Category}
+                {row.Keterangan}
               </span>
             </td>
 
@@ -909,6 +938,7 @@ useEffect(() => {
           <th className="px-2.5 py-2.5 font-bold">Tanggal</th>
           <th className="px-2 py-2.5 font-bold">Unit / Nama</th>
           <th className="px-2 py-2.5 font-bold">Category / Status</th>
+          <th className="px-2 py-2.5 font-bold">Account</th>
           <th className="px-2.5 py-2.5 font-bold text-right">Cara Bayar / Nominal</th>
         </tr>
       </thead>
@@ -964,12 +994,20 @@ useEffect(() => {
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
                         : "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
                     }`}
+                    
                   >
-                    {statusText}
+                    {renderStatusBadge(item.Status)} 
                   </span>
                 </td>
 
-                {/* Kolom 4: Cara Bayar / Nominal */}
+                  {/* Kolom 4: Account / Keterangan (Read-only Badge, tanpa inline edit reconcile) */}
+                  <td className="px-2.5 py-3 align-top">
+                  <p className="font-bold text-slate-700 dark:text-slate-200 leading-tight">
+                  {item?.Account || item?.account} - {item?.AccountName || item?.accname}
+                  </p>
+                </td> 
+
+                {/* Kolom 5: Cara Bayar / Nominal */}
                 <td className="px-2.5 py-3 align-top text-right whitespace-nowrap">
                   <p className="text-[10px] text-slate-400">
                     {item.CaraBayar || item.Metode || "-"}

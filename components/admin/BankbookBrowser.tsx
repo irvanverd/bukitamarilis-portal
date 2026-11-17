@@ -294,7 +294,7 @@ const [activeJurnalModal, setActiveJurnalModal] = useState<"IN" | "OUT" | "PINDA
 
   // Daftar tahun dinamis dari data reconcile + tahun berjalan
   const availableYears = useMemo(() => {
-    const years = new Set<string>([String(now.getFullYear()), "2025", "2026"]);
+    const years = new Set<string>([String(now.getFullYear()), "2025", "2026","2027", "2028"]);
     data.forEach((item) => {
       const recDate = getItemReconcileDate(item);
       if (recDate) {
@@ -1021,7 +1021,7 @@ const [activeJurnalModal, setActiveJurnalModal] = useState<"IN" | "OUT" | "PINDA
 
                   {/* Preview 2 Transaksi yang Akan Terbentuk */}
                   <div className="rounded-2xl border border-sky-200/70 bg-sky-50/60 p-3.5 text-[11px] text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200 space-y-1">
-                    <p className="font-bold">Ringkasan 2 Transaksi (Category: NON-IPL):</p>
+                    <p className="font-bold">Ringkasan 2 Transaksi:</p>
                     <p>
                       1. <strong>{pbForm.bankAsal}</strong>:{" "}
                       <span className="font-mono font-bold text-rose-600">
