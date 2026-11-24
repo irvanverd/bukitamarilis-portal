@@ -33,6 +33,7 @@ interface WargaOption {
   korwil: string;
   iplAmount: number;
   freeIPL: number; // Nilai 0 = Bebas IPL / Non-Aktif Tagihan
+  iplaccount: string;
 }
 
 interface PendingMonth {
@@ -152,6 +153,7 @@ const money = (val: number) =>
                 w.flagFreeIPL !== undefined && w.flagFreeIPL !== null
                   ? Number(w.flagFreeIPL)
                   : 1,
+                iplaccount: w.account,
             });
           });
 
@@ -573,11 +575,13 @@ const handleSubmit = async (e: React.FormEvent) => {
   setFeedback(null);
 
   // Tangani data blok & warga (jika NON-IPL tanpa blok, fallback ke "UMUM")
-  const targetBlok = currentWarga?.blok || "UMUM";
+  const targetBlok = currentWarga?.blok || "0";
   const targetNama = currentWarga?.nama || (inputType === "NON-IPL" ? "Penerimaan Non-IPL" : "");
   const targetKorwil = currentWarga?.korwil || "-";
+  const IPLAccount = currentWarga?.iplaccount || "3001";
+  
   const cleanBlok = targetBlok.replace(/[^a-zA-Z0-9]/g, "");
-  const selectedCoa = coaList.find((c) => c.account === account);
+  const selectedCoa = coaList.find((c) => c.account === account); 
   const namaKategori = selectedCoa ? selectedCoa.name : account;
 
   const tglDate = tanggalBayar ? new Date(tanggalBayar) : new Date();
@@ -616,7 +620,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     blok: targetBlok,
     namaWarga: "",//targetNama,
     category: inputType === "IPL" ? "IPL" : "NON-IPL",
-    account: account || (inputType === "IPL" ? "IPL" : ""),
+    account:  inputType === "IPL" ? IPLAccount : account,
     tanggalBayar,
     caraBayar,
     korwil: targetKorwil,
