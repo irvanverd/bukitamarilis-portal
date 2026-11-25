@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     action !== "getCoaCategories" &&
     action !== "getKeuanganList" && 
     action !== "getFinanceDashboardadmin" && 
+    action !== "getWargaCompliance" && 
     action !== "getFinanceSummary"
   ) {
     return NextResponse.json(

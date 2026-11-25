@@ -29,8 +29,8 @@ export default function HomePage() {
 
       {/* STATISTIK */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card title="Jumlah KK" value="300" color="bg-blue-50" emoji="👫"  />
-        <Card title="Jumlah Warga" value="300" color="bg-green-50" emoji="👤"  />
+        <Card title="Jumlah KK" value="406" color="bg-blue-50" emoji="👫"  />
+        <Card title="Jumlah Warga" value="406" color="bg-green-50" emoji="👤"  />
         <Card title="Kegiatan Bulan Ini" value="0" color="bg-yellow-50" emoji="📆"  />
         <Card title="Pengumuman Aktif" value="1" color="bg-red-50" emoji="📢"  />
       </section>

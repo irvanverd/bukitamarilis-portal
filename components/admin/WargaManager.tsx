@@ -26,6 +26,13 @@ import {
   X,
 } from "lucide-react";
 
+
+interface ComplianceInfo {
+  paidMonths: number;
+  targetMonths: number;
+  percent: number;
+}
+
 export interface WargaRecord {
   Blok: string;
   Nama: string;
@@ -119,6 +126,91 @@ const money = (val: number) =>
     if (val === undefined || val === null) return false;
     return val === 1 || val === "1" || val === true || String(val).toLowerCase() === "true" || String(val).toLowerCase() === "aktif";
   };
+
+
+  const [complianceMap, setComplianceMap] = useState<Record<string, ComplianceInfo>>({});
+const [targetMonths, setTargetMonths] = useState<number>(new Date().getMonth() + 1);
+
+useEffect(() => {
+  const fetchCompliance = async () => {
+    try {
+      const res = await fetch("/api/finance?action=getWargaCompliance");
+      const json = await res.json();
+      if (json.success && json.data) {
+        setComplianceMap(json.data);
+        if (json.targetMonths) setTargetMonths(json.targetMonths);
+      }
+    } catch (err) {
+      console.error("Gagal memuat rating kepatuhan IPL:", err);
+    }
+  };
+  fetchCompliance();
+}, []);
+
+const getComplianceRating = (item: any) => {
+  const rawBlok =
+    item.namaBlok ?? item.nama_blok ?? item.blok ?? item.Blok ?? item.noRumah ?? "";
+  const bKey = String(rawBlok).trim().toUpperCase().replace(/\s+/g, "");
+
+  const record = complianceMap[bKey];
+  const paid = record ? record.paidMonths : 0;
+  const target = record ? record.targetMonths : targetMonths;
+  const percent = record ? record.percent : 0;
+
+  if (percent >= 90) {
+    return {
+      grade: "A",
+      label: "Disiplin",
+      percent,
+      paid,
+      target,
+      badgeClass:
+        "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-300",
+    };
+  }
+  if (percent >= 70) {
+    return {
+      grade: "B",
+      label: "Baik",
+      percent,
+      paid,
+      target,
+      badgeClass:
+        "bg-sky-500/15 text-sky-700 border-sky-500/30 dark:text-sky-300",
+    };
+  }
+  if (percent >= 40) {
+    return {
+      grade: "C",
+      label: "Cukup",
+      percent,
+      paid,
+      target,
+      badgeClass:
+        "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-300",
+    };
+  }
+  if (percent > 0) {
+    return {
+      grade: "D",
+      label: "Kurang",
+      percent,
+      paid,
+      target,
+      badgeClass:
+        "bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-300",
+    };
+  }
+  return {
+    grade: "E",
+    label: "Pasif",
+    percent: 0,
+    paid: 0,
+    target,
+    badgeClass:
+      "bg-rose-500/15 text-rose-700 border-rose-500/30 dark:text-rose-300",
+  };
+};
 
   // Mengambil master data warga
   const fetchWarga = async () => {
@@ -584,6 +676,8 @@ try {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-400 dark:bg-slate-800/60">
               <tr>
+              <th className="px-5 py-3.5 font-bold">
+                Rating </th>
                 <th className="px-5 py-3.5 font-bold">No. Blok</th>
                 <th className="px-4 py-3.5 font-bold">Nama Warga</th>
                 <th className="px-4 py-3.5 font-bold">Status Rumah</th>
@@ -610,13 +704,29 @@ try {
                 </tr>
               ) : (
                 filteredData.map((item, idx) => {
+                  const rating = getComplianceRating(item);
                   const isFree = checkIsFreeIPL(item.flagFreeIPL);
                   const isMobile = checkIsMobileActive(item.flagMobile);
                   const cleanPhone = item.NoHp ? item.NoHp.replace(/[^0-9]/g, "") : "";
                   const waNumber = cleanPhone.startsWith("0") ? "62" + cleanPhone.slice(1) : cleanPhone;
 
                   return (
+                    
                     <tr key={`${item.Blok}-${idx}`} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                      <td className="px-4 py-3 whitespace-nowrap">
+      <div className="flex items-center gap-2">
+        <span
+          className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-bold ${rating.badgeClass}`}
+        >
+          <span>{rating.grade}</span>
+          <span>·</span>
+          <span>{rating.label}</span>
+        </span>
+        <span className="text-[11px] font-medium text-slate-400">
+          ({rating.paid}/{rating.target} bln)
+        </span>
+      </div>
+    </td>
                       <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
                         <span className="rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                           {item.Blok}
