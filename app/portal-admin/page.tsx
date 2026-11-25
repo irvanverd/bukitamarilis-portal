@@ -12,6 +12,7 @@ import BankbookBrowser from "@/components/admin/BankbookBrowser";
 import Link from "next/link";
 import {
   ArrowDownLeft,
+  ArrowLeft,
   ArrowUpRight,
   Boxes,
   Calendar,
@@ -880,10 +881,24 @@ const handleSubmitPwdForm = async (e: React.FormEvent) => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-7 overflow-y-auto">
+     {/* Main Content Area */}
+     <main className="flex-1 min-w-0 p-4 sm:p-7 overflow-y-auto">
+        {/* Tombol Back hanya muncul jika activeTab BUKAN "dashboard" */}
+        {activeTab !== "dashboard" && session?.allowedTabs.includes("dashboard") && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab("dashboard")}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <ArrowLeft size={15} style={{ color: "var(--primary)" }} />
+              <span>Kembali ke Dashboard</span>
+            </button>
+          </div>
+        )}
         {/* ================= TAB 1: DASHBOARD ================= */}
         {activeTab === "dashboard" && session?.allowedTabs.includes("dashboard") && (
+          
           <DashboardKeuangan
             userName={session?.nama || session?.username || "Admin"}
             allowedTabs={session?.allowedTabs}
@@ -906,7 +921,6 @@ const handleSubmitPwdForm = async (e: React.FormEvent) => {
             />
           )}
 
-        {activeTab === "browser-keuangan" && <KeuanganBrowser />}
         {activeTab === "chart" && <TransparansiPage />}
 
         {activeTab === "bankbook" && session?.allowedTabs.includes("bankbook") && (

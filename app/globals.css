@@ -1,8 +1,109 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* Mendukung baik atribut data-theme="dark" maupun class="dark" pada <html> */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
+
+/* Hubungkan warna aksen tema (data-theme) ke seluruh komponen portal-admin */
+html[data-theme] .bg-emerald-600,
+html[data-theme] .bg-emerald-500 {
+  background-color: var(--primary) !important;
+}
+
+html[data-theme] .hover\:bg-emerald-700:hover,
+html[data-theme] .hover\:bg-emerald-600:hover {
+  background-color: color-mix(in srgb, var(--primary) 88%, black) !important;
+}
+
+html[data-theme] .text-emerald-600,
+html[data-theme] .text-emerald-700,
+html[data-theme] .text-emerald-500 {
+  color: var(--primary) !important;
+}
+
+html[data-theme] .border-emerald-600,
+html[data-theme] .border-emerald-500 {
+  border-color: var(--primary) !important;
+}
+
+html[data-theme] .bg-emerald-50 {
+  background-color: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+}
+
+/* Override seluruh permukaan & teks saat data-theme="dark" atau .dark aktif */
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html.dark,
+html.dark body {
+  background-color: #020617 !important;
+  color: #f1f5f9 !important;
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] [class*="bg-white/"],
+html.dark .bg-white,
+html.dark [class*="bg-white/"] {
+  background-color: #0f172a !important;
+}
+
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] [class*="bg-slate-50/"],
+html.dark .bg-slate-50,
+html.dark [class*="bg-slate-50/"] {
+  background-color: #020617 !important;
+}
+
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] [class*="bg-slate-100/"],
+html.dark .bg-slate-100,
+html.dark [class*="bg-slate-100/"] {
+  background-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] [class*="border-slate-200/"],
+html[data-theme="dark"] [class*="border-slate-100/"],
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark [class*="border-slate-200/"],
+html.dark [class*="border-slate-100/"] {
+  border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .text-slate-950,
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800,
+html.dark .text-slate-950,
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-slate-600,
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .text-slate-500,
+html.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
 /* Smooth theme transition */
 [data-theme] {
   transition:

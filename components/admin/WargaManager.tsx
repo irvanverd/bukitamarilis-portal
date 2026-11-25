@@ -21,9 +21,10 @@ import {
   User,
   Users,
   Wallet,
+  UserCheck,
+  MapPin,
   X,
 } from "lucide-react";
-import { Curve } from "recharts";
 
 export interface WargaRecord {
   Blok: string;
@@ -79,7 +80,7 @@ const money = (val: number) =>
   const [listWarga, setListWarga] = useState<WargaRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [filterKorwil, setFilterKorwil] = useState("SEMUA");
+  const [filterKorwil, setFilterKorwil] = useState("");
 
   // State Modal Form & Detail
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -163,7 +164,7 @@ useEffect(() => {
         w.Blok.toLowerCase().includes(search.toLowerCase()) ||
         w.Nama.toLowerCase().includes(search.toLowerCase()) ||
         (w.NoHp && w.NoHp.includes(search));
-      const matchKorwil = filterKorwil === "SEMUA" || w.Korwil === filterKorwil;
+      const matchKorwil = filterKorwil === "" || w.Korwil === filterKorwil;
       return matchQuery && matchKorwil;
     });
   }, [listWarga, search, forcedKorwil,filterKorwil]);
@@ -346,6 +347,70 @@ try {
     return unpaidCount * formTarif;
   }, [unpaidCount, formTarif]);
 
+
+  const wargaStats = useMemo(() => {
+    const list = Array.isArray(listWarga) ? listWarga : [];
+    const totalWarga = list.length;
+  
+    const byKorwil: Record<string, number> = {};
+    const byStatus: Record<string, number> = {};
+    let mobileActive = 0;
+  
+    list.forEach((item: any) => {
+      // 1. Hitung per Korwil
+      const korwilRaw = String(item.korwil || item.Korwil || "Tanpa Korwil").trim();
+      const korwilKey = korwilRaw === "" || korwilRaw === "-" ? "Tanpa Korwil" : korwilRaw;
+      byKorwil[korwilKey] = (byKorwil[korwilKey] || 0) + 1;
+  
+    // 2. Hitung per Status (menggunakan item.statusRumah dalam huruf KAPITAL)
+    const statusRaw = String(item.StatusRumah ?? "").trim();
+    const isInvalidStatus =
+      !statusRaw ||
+      statusRaw === "-" ||
+      statusRaw.toLowerCase() === "undefined" ||
+      statusRaw.toLowerCase() === "null";
+
+    const statusKey = isInvalidStatus
+      ? "TIDAK DIKETAHUI"
+      : statusRaw.toUpperCase();
+
+    byStatus[statusKey] = (byStatus[statusKey] || 0) + 1;
+
+
+      // 3. Hitung Mobile Active (mendukung berbagai variasi field/nilai di sheet_warga)
+      const rawMobile =
+        item.flagMobile ??
+        item.mobile_active ??
+        item.isMobileActive ??
+        item.aksesMobile ??
+        item.mobile ??
+        "";
+      const mobileStr = String(rawMobile).trim().toLowerCase();
+      if (
+        rawMobile === true ||
+        rawMobile === 1 ||
+        ["true", "1", "ya", "yes", "aktif", "active"].includes(mobileStr)
+      ) {
+        mobileActive += 1;
+      }
+    });
+  
+    // Urutkan korwil secara alfabetis (Korwil 1, Korwil 2, dst.)
+    const korwilEntries = Object.entries(byKorwil).sort(([a], [b]) =>
+      a.localeCompare(b, "id", { numeric: true })
+    );
+  
+    // Urutkan status dari jumlah terbanyak
+    const statusEntries = Object.entries(byStatus).sort(([, a], [, b]) => b - a);
+  
+    return {
+      totalWarga,
+      korwilEntries,
+      statusEntries,
+      mobileActive,
+    };
+  }, [listWarga]);
+
   return (
     <div className="space-y-5">
       {/* Toast Alert */}
@@ -387,6 +452,99 @@ try {
         </div>
       </div>
 
+      {/* ================= SUMMARY DATA WARGA ================= */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-5">
+        {/* Card 1: Total Warga */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <span>Total Warga / Unit</span>
+            <div
+              style={{
+                backgroundColor: "color-mix(in srgb, var(--primary) 12%, transparent)",
+                color: "var(--primary)",
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-xl"
+            >
+              <Users size={16} />
+            </div>
+          </div>
+          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
+            {wargaStats.totalWarga}{" "}
+            <span className="text-xs font-semibold text-slate-400">Unit</span>
+          </p>
+          <p className="mt-1 text-[11px] text-slate-400">
+            Seluruh data unit terdaftar
+          </p>
+        </div>
+
+        {/* Card 2: Total Warga Mobile Active */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <span>Mobile Active</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <Smartphone size={16} />
+            </div>
+          </div>
+          <p className="mt-2 text-2xl font-black text-sky-600 dark:text-sky-400">
+            {wargaStats.mobileActive}{" "}
+            <span className="text-xs font-semibold text-slate-400">
+              / {wargaStats.totalWarga}
+            </span>
+          </p>
+          <p className="mt-1 text-[11px] text-slate-400">
+            {wargaStats.totalWarga > 0
+              ? `${Math.round((wargaStats.mobileActive / wargaStats.totalWarga) * 100)}% akun warga aktif di aplikasi`
+              : "Belum ada data warga"}
+          </p>
+        </div>
+
+        {/* Card 3: Total Warga by Korwil */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+            <span>Warga per Korwil</span>
+            <MapPin size={15} style={{ color: "var(--primary)" }} />
+          </div>
+          {wargaStats.korwilEntries.length === 0 ? (
+            <p className="text-xs text-slate-400">Belum ada data korwil</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-1">
+              {wargaStats.korwilEntries.map(([korwil, count]) => (
+                <span
+                  key={korwil}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  <span>{korwil}:</span>
+                  <strong style={{ color: "var(--primary)" }}>{count}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+       {/* Card 4: Total Warga by Status */}
+       <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+            <span>Warga per Status</span>
+            <UserCheck size={15} style={{ color: "var(--primary)" }} />
+          </div>
+          {wargaStats.statusEntries.length === 0 ? (
+            <p className="text-xs text-slate-400">Belum ada data status</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+              {wargaStats.statusEntries.map(([status, count]) => (
+                <span
+                  key={status}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  <span>{status} =</span>
+                  <strong style={{ color: "var(--primary)" }}>{count}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Search & Korwil Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -403,14 +561,18 @@ try {
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-slate-400" />
          {/* Sembunyikan dropdown filter Korwil jika sudah dikunci oleh role KORWIL */}
-{!forcedKorwil && (
+         {!forcedKorwil && (
   <select
     value={filterKorwil}
     onChange={(e) => setFilterKorwil(e.target.value)}
     className="..."
   >
-    <option value="">Semua Korwil</option>
-    {/* ... opsi korwil ... */}
+    <option value="">Semua Korwil ({wargaStats.totalWarga})</option>
+    {wargaStats.korwilEntries.map(([korwil, count]) => (
+      <option key={korwil} value={korwil}>
+        {korwil} ({count})
+      </option>
+    ))}
   </select>
 )}
         </div>
