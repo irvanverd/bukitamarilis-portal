@@ -23,14 +23,15 @@ import {
   Wallet,
   UserCheck,
   MapPin,
+  Star,
   X,
 } from "lucide-react";
 
 
 interface ComplianceInfo {
-  paidMonths: number;
-  targetMonths: number;
-  percent: number;
+  totalNominal: number;
+  txCount: number;
+  ratioPercent: number;
 }
 
 export interface WargaRecord {
@@ -78,6 +79,13 @@ const money = (val: number) =>
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(val);
+
+  const formatRupiahShort = (val: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(val || 0);
 
   interface WargaManagerProps {
     forcedKorwil?: string; // <-- Tambahkan definisi prop opsional ini
@@ -127,90 +135,82 @@ const money = (val: number) =>
     return val === 1 || val === "1" || val === true || String(val).toLowerCase() === "true" || String(val).toLowerCase() === "aktif";
   };
 
-
   const [complianceMap, setComplianceMap] = useState<Record<string, ComplianceInfo>>({});
-const [targetMonths, setTargetMonths] = useState<number>(new Date().getMonth() + 1);
 
-useEffect(() => {
-  const fetchCompliance = async () => {
-    try {
-      const res = await fetch("/api/finance?action=getWargaCompliance");
-      const json = await res.json();
-      if (json.success && json.data) {
-        setComplianceMap(json.data);
-        if (json.targetMonths) setTargetMonths(json.targetMonths);
+  useEffect(() => {
+    const fetchCompliance = async () => {
+      try {
+        const res = await fetch("/api/finance?action=getWargaCompliance");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setComplianceMap(json.data);
+        }
+      } catch (err) {
+        console.error("Gagal memuat rating kepatuhan IPL:", err);
       }
-    } catch (err) {
-      console.error("Gagal memuat rating kepatuhan IPL:", err);
+    };
+    fetchCompliance();
+  }, []);
+  
+  const getComplianceRating = (item: any) => {
+    const rawBlok =
+      item.namaBlok ?? item.nama_blok ?? item.blok ?? item.Blok ?? item.noRumah ?? "";
+    const bKey = String(rawBlok).trim().toUpperCase().replace(/\s+/g, "");
+  
+    const record = complianceMap[bKey];
+    const totalNominal = record ? record.totalNominal : 0;
+    const txCount = record ? record.txCount : 0;
+    const ratio = record ? record.ratioPercent : 0;
+  
+    if (totalNominal <= 0) {
+      return {
+        stars: 1,
+        label: "Pasif",
+        totalNominal: 0,
+        txCount: 0,
+        starColor: "text-rose-500 fill-rose-500",
+        badgeClass: "bg-rose-500/10 text-rose-700 border-rose-500/25 dark:text-rose-300",
+      };
     }
-  };
-  fetchCompliance();
-}, []);
-
-const getComplianceRating = (item: any) => {
-  const rawBlok =
-    item.namaBlok ?? item.nama_blok ?? item.blok ?? item.Blok ?? item.noRumah ?? "";
-  const bKey = String(rawBlok).trim().toUpperCase().replace(/\s+/g, "");
-
-  const record = complianceMap[bKey];
-  const paid = record ? record.paidMonths : 0;
-  const target = record ? record.targetMonths : targetMonths;
-  const percent = record ? record.percent : 0;
-
-  if (percent >= 90) {
+    if (ratio >= 110) {
+      return {
+        stars: 5,
+        label: "Sangat Disiplin",
+        totalNominal,
+        txCount,
+        starColor: "text-emerald-500 fill-emerald-500",
+        badgeClass: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25 dark:text-emerald-300",
+      };
+    }
+    if (ratio >= 85) {
+      return {
+        stars: 4,
+        label: "Disiplin",
+        totalNominal,
+        txCount,
+        starColor: "text-sky-500 fill-sky-500",
+        badgeClass: "bg-sky-500/10 text-sky-700 border-sky-500/25 dark:text-sky-300",
+      };
+    }
+    if (ratio >= 50) {
+      return {
+        stars: 3,
+        label: "Cukup",
+        totalNominal,
+        txCount,
+        starColor: "text-amber-500 fill-amber-500",
+        badgeClass: "bg-amber-500/10 text-amber-700 border-amber-500/25 dark:text-amber-300",
+      };
+    }
     return {
-      grade: "A",
-      label: "Disiplin",
-      percent,
-      paid,
-      target,
-      badgeClass:
-        "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-300",
-    };
-  }
-  if (percent >= 70) {
-    return {
-      grade: "B",
-      label: "Baik",
-      percent,
-      paid,
-      target,
-      badgeClass:
-        "bg-sky-500/15 text-sky-700 border-sky-500/30 dark:text-sky-300",
-    };
-  }
-  if (percent >= 40) {
-    return {
-      grade: "C",
-      label: "Cukup",
-      percent,
-      paid,
-      target,
-      badgeClass:
-        "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-300",
-    };
-  }
-  if (percent > 0) {
-    return {
-      grade: "D",
+      stars: 2,
       label: "Kurang",
-      percent,
-      paid,
-      target,
-      badgeClass:
-        "bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-300",
+      totalNominal,
+      txCount,
+      starColor: "text-orange-500 fill-orange-500",
+      badgeClass: "bg-orange-500/10 text-orange-700 border-orange-500/25 dark:text-orange-300",
     };
-  }
-  return {
-    grade: "E",
-    label: "Pasif",
-    percent: 0,
-    paid: 0,
-    target,
-    badgeClass:
-      "bg-rose-500/15 text-rose-700 border-rose-500/30 dark:text-rose-300",
   };
-};
 
   // Mengambil master data warga
   const fetchWarga = async () => {
@@ -288,7 +288,7 @@ useEffect(() => {
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
       const START_YEAR = 2026;
-      const START_MONTH = 2; // Mulai Februari 2026
+      const START_MONTH = 1; // Mulai Februari 2026
 
       const historyList: IPLHistoryItem[] = [];
 
@@ -713,20 +713,33 @@ try {
                   return (
                     
                     <tr key={`${item.Blok}-${idx}`} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                      <td className="px-4 py-3 whitespace-nowrap">
-      <div className="flex items-center gap-2">
-        <span
-          className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-bold ${rating.badgeClass}`}
-        >
-          <span>{rating.grade}</span>
-          <span>·</span>
-          <span>{rating.label}</span>
-        </span>
-        <span className="text-[11px] font-medium text-slate-400">
-          ({rating.paid}/{rating.target} bln)
+                     <td className="px-4 py-3 whitespace-nowrap">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5">
+          {/* Render 5 Bintang   <span
+            className={`rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${rating.badgeClass}`}
+          >
+            {formatRupiahShort(rating.totalNominal)}
+          </span>*/}
+          <div className="flex items-center gap-0.5" title={`${rating.label} (${rating.txCount}x transaksi)`}>
+            {[1, 2, 3, 4, 5].map((starIdx) => (
+              <Star
+                key={starIdx}
+                size={13}
+                className={
+                  starIdx <= rating.stars
+                    ? rating.starColor
+                    : "text-slate-300 dark:text-slate-700"
+                }
+              />
+            ))}
+          </div>
+        </div>
+        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        {rating.label} 
         </span>
       </div>
-    </td>
+    </td> 
                       <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
                         <span className="rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                           {item.Blok}
